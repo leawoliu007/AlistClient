@@ -47,7 +47,8 @@ class FileUtils {
       case "midi":
       case "realaudio":
       case "vqf":
-      case "oggvorbis":
+      case "ogg":
+      case "opus":
       case "flac":
       case "aac":
         return FileType.audio;
