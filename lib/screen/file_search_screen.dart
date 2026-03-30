@@ -7,6 +7,7 @@ import 'package:alist/entity/file_search_resp.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';
 import 'package:alist/screen/audio_player_screen.dart';
+import 'package:alist/util/audio_player_service.dart';
 import 'package:alist/screen/file_reader_screen.dart';
 import 'package:alist/screen/gallery_screen.dart';
 import 'package:alist/screen/pdf_reader_screen.dart';
