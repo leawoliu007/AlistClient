@@ -119,6 +119,10 @@ class AudioPlayerService extends GetxService {
 
     // Load new list
     prepared.value = false;
+    currentPos.value = const Duration(milliseconds: 0);
+    duration.value = const Duration(milliseconds: 0);
+    seekPos.value = -1.0;
+    
     audios.value = newAudios;
     if (index < 0 || index >= audios.length) index = 0;
     currentIndex.value = index;

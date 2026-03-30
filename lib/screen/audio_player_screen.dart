@@ -22,8 +22,13 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   @override
   void initState() {
     super.initState();
-    final List<AudioItem> audios = Get.arguments?["audios"] ?? [];
-    final int index = Get.arguments?["index"] ?? 0;
+    final arguments = Get.arguments;
+    final List<AudioItem> audios = arguments != null && arguments["audios"] != null 
+        ? (arguments["audios"] as List).cast<AudioItem>() 
+        : [];
+    final int index = arguments != null && arguments["index"] != null 
+        ? arguments["index"] 
+        : 0;
     if (audios.isNotEmpty) {
       controller.playNewList(audios, index);
     }
@@ -120,14 +125,19 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
     }
 
     double duration = controller.duration.value.inMilliseconds.toDouble();
+    double maxDuration = max(duration, 1.0);
     double currentValue = controller.seekPos.value > 0
         ? controller.seekPos.value
         : controller.currentPos.value.inMilliseconds.toDouble();
+    
+    // Crucial: Clamp the current value to prevent FijkSlider from crashing
+    currentValue = currentValue.clamp(0.0, maxDuration);
+
     Widget slider = FijkSlider(
       value: currentValue,
       cacheValue: currentValue,
       min: 0.0,
-      max: max(duration, 1),
+      max: maxDuration,
       onChanged: (v) {
         controller.seekPos.value = v;
       },
