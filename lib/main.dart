@@ -17,16 +17,9 @@ import 'database/alist_database_controller.dart';
 import 'generated/color_schemes.g.dart';
 
 import 'package:alist/util/audio_player_service.dart';
-import 'package:just_audio_background/just_audio_background.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  await JustAudioBackground.init(
-    androidNotificationChannelId: 'com.github.alist.client.channel.audio',
-    androidNotificationChannelName: 'AList Audio Playback',
-    androidNotificationOngoing: true,
-  );
   
   // sp初始化
   SpUtil.getInstance();
