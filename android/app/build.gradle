@@ -90,6 +90,9 @@ android {
         release {
             if (hasStoreFile) {
                 signingConfig signingConfigs.release
+            } else {
+                // Fallback to debug signature for GitHub Actions / CI if no storeFile is provided
+                signingConfig signingConfigs.debug
             }
             minifyEnabled false
             shrinkResources false
