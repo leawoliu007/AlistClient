@@ -1,33 +1,36 @@
-import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/l10n/intl_keys.dart';
-import 'package:alist/util/file_utils.dart';
-import 'package:alist/util/lock_caching_audio_source.dart';
-import 'package:alist/util/user_controller.dart';
+import 'package:alist/util/audio_player_service.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/slider.dart';
-import 'package:dio/dio.dart';
-import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:just_audio/just_audio.dart';
-import 'package:just_audio_background/just_audio_background.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
-import 'dart:io' as io;
 
-class AudioPlayerScreen extends StatelessWidget {
+class AudioPlayerScreen extends StatefulWidget {
   AudioPlayerScreen({Key? key}) : super(key: key);
-  final List<AudioItem> _audios = Get.arguments["audios"] ?? [];
-  final int _index = Get.arguments["index"] ?? 0;
+
+  @override
+  State<AudioPlayerScreen> createState() => _AudioPlayerScreenState();
+}
+
+class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
+  final AudioPlayerService controller = AudioPlayerService.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    final List<AudioItem> audios = Get.arguments?["audios"] ?? [];
+    final int index = Get.arguments?["index"] ?? 0;
+    if (audios.isNotEmpty) {
+      controller.playNewList(audios, index);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final AudioPlayerScreenController controller =
-        Get.put(AudioPlayerScreenController(audios: _audios, index: _index));
     return AlistScaffold(
       appbarTitle: const SizedBox(),
       body: Center(
@@ -36,7 +39,7 @@ class AudioPlayerScreen extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.only(left: 30, right: 30, bottom: 10),
-              child: Obx(() => Text(controller._name.value)),
+              child: Obx(() => Text(controller.name.value)),
             ),
             Container(
               width: double.infinity,
@@ -52,7 +55,7 @@ class AudioPlayerScreen extends StatelessWidget {
   }
 
   Row _buildButtons(
-      AudioPlayerScreenController controller, BuildContext context) {
+      AudioPlayerService controller, BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -61,43 +64,43 @@ class AudioPlayerScreen extends StatelessWidget {
           child: IconButton(
             iconSize: 40,
             icon: Obx(() {
-              if (controller._playMode.value == PlayMode.list) {
+              if (controller.playMode.value == PlayMode.list) {
                 return const Icon(Icons.repeat);
-              } else if (controller._playMode.value == PlayMode.single) {
+              } else if (controller.playMode.value == PlayMode.single) {
                 return const Icon(Icons.repeat_one);
               } else {
                 return const Icon(Icons.shuffle);
               }
             }),
             onPressed: () {
-              controller._changePlayMode();
+              controller.changePlayMode();
             },
           ),
         ),
         Obx(() => IconButton(
               iconSize: 50,
               icon: const Icon(Icons.skip_previous),
-              onPressed: controller._playMode.value == PlayMode.single ||
-                      controller._audios.length <= 1
+              onPressed: controller.playMode.value == PlayMode.single ||
+                      controller.audios.length <= 1
                   ? null
                   : () {
-                      controller._playPrevious();
+                      controller.playPrevious();
                     },
             )),
         Obx(
           () => _PlayButton(
-            playing: controller._playing.value,
-            onPressed: controller._playOrPause,
+            playing: controller.playing.value,
+            onPressed: controller.playOrPause,
           ),
         ),
         Obx(() => IconButton(
               iconSize: 50,
               icon: const Icon(Icons.skip_next),
-              onPressed: controller._playMode.value == PlayMode.single ||
-                      controller._audios.length <= 1
+              onPressed: controller.playMode.value == PlayMode.single ||
+                      controller.audios.length <= 1
                   ? null
                   : () {
-                      controller._playNext();
+                      controller.playNext();
                     },
             )),
         IconButton(
@@ -111,36 +114,35 @@ class AudioPlayerScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFijkSlider(AudioPlayerScreenController controller) {
-    if (!controller._prepared.value) {
+  Widget _buildFijkSlider(AudioPlayerService controller) {
+    if (!controller.prepared.value) {
       return const SizedBox();
     }
 
-    double duration = controller._duration.value.inMilliseconds.toDouble();
-    double currentValue = controller._seekPos.value > 0
-        ? controller._seekPos.value
-        : controller._currentPos.value.inMilliseconds.toDouble();
+    double duration = controller.duration.value.inMilliseconds.toDouble();
+    double currentValue = controller.seekPos.value > 0
+        ? controller.seekPos.value
+        : controller.currentPos.value.inMilliseconds.toDouble();
     Widget slider = FijkSlider(
       value: currentValue,
       cacheValue: currentValue,
       min: 0.0,
       max: max(duration, 1),
       onChanged: (v) {
-        controller._seekPos.value = v;
+        controller.seekPos.value = v;
       },
       onChangeEnd: (v) {
-        controller._currentPos.value = Duration(milliseconds: v.toInt());
-        controller._audioPlayer.seek(controller._currentPos.value);
-        debugPrint("seek to $v duration=$duration");
-        controller._seekPos.value = -1;
+        controller.currentPos.value = Duration(milliseconds: v.toInt());
+        controller.player.seek(controller.currentPos.value);
+        controller.seekPos.value = -1;
       },
     );
     return Row(
       children: [
         Text(
-          _duration2String(controller._seekPos.value > 0
-              ? Duration(milliseconds: controller._seekPos.value.toInt())
-              : controller._currentPos.value),
+          _duration2String(controller.seekPos.value > 0
+              ? Duration(milliseconds: controller.seekPos.value.toInt())
+              : controller.currentPos.value),
           style: const TextStyle(
             fontSize: 12,
             fontFeatures: [FontFeature.tabularFigures()],
@@ -152,7 +154,7 @@ class AudioPlayerScreen extends StatelessWidget {
           child: slider,
         )),
         Text(
-          _duration2String(controller._duration.value),
+          _duration2String(controller.duration.value),
           style: const TextStyle(
             fontSize: 12,
             fontFeatures: [FontFeature.tabularFigures()],
@@ -179,8 +181,8 @@ class AudioPlayerScreen extends StatelessWidget {
   }
 
   void _showPlayerList(
-      BuildContext context, AudioPlayerScreenController controller) {
-    if (controller._audios.isEmpty) return;
+      BuildContext context, AudioPlayerService controller) {
+    if (controller.audios.isEmpty) return;
     var scrollController = AutoScrollController();
     showModalBottomSheet(
         context: context,
@@ -190,7 +192,7 @@ class AudioPlayerScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 child: Text(
-                  "${Intl.audioPlayListDialog_title.tr}(${controller._audios.length})",
+                  "${Intl.audioPlayListDialog_title.tr}(${controller.audios.length})",
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
@@ -201,48 +203,48 @@ class AudioPlayerScreen extends StatelessWidget {
         });
 
     Future.delayed(const Duration(milliseconds: 200)).then((value) {
-      scrollController.scrollToIndex(controller._index,
+      scrollController.scrollToIndex(controller.currentIndex.value,
           duration: const Duration(milliseconds: 50),
           preferPosition: AutoScrollPosition.begin);
     });
   }
 
   ListView _playList(AutoScrollController scrollController,
-      AudioPlayerScreenController controller) {
+      AudioPlayerService controller) {
     return ListView.separated(
       controller: scrollController,
       itemBuilder: (context, index) {
         return _buildPlayListItem(scrollController, controller, context, index);
       },
       separatorBuilder: (context, index) => const Divider(),
-      itemCount: controller._audios.length,
+      itemCount: controller.audios.length,
     );
   }
 
   Widget _buildPlayListItem(AutoScrollController scrollController,
-      AudioPlayerScreenController controller, BuildContext context, int index) {
-    var isPlayingIndex = controller._index == index;
+      AudioPlayerService controller, BuildContext context, int index) {
+    var isPlayingIndex = controller.currentIndex.value == index;
     return AutoScrollTag(
-      key: ValueKey(controller._audios[index]),
+      key: ValueKey(controller.audios[index]),
       controller: scrollController,
       index: index,
       child: ListTile(
-        title: Text(controller._audios[index].name,
+        title: Text(controller.audios[index].name,
             style: isPlayingIndex
                 ? TextStyle(color: Theme.of(context).colorScheme.primary)
                 : const TextStyle()),
         onTap: () {
           Navigator.pop(context);
-          if (controller._index == index) {
-            controller._playOrPause();
+          if (controller.currentIndex.value == index) {
+            controller.playOrPause();
           } else {
-            controller._play(index);
+            controller.play(index);
           }
         },
         trailing: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () {
-            controller._remove(index);
+            controller.remove(index);
           },
         ),
       ),
@@ -250,253 +252,10 @@ class AudioPlayerScreen extends StatelessWidget {
   }
 }
 
-class AudioPlayerScreenController extends GetxController {
-  final RxList<AudioItem> _audios;
-  int _index;
-  final _playMode = PlayMode.list.obs;
-
-  AudioPlayerScreenController(
-      {required List<AudioItem> audios, required int index})
-      : _audios = audios.obs,
-        _index = index {
-    if (_audios.isNotEmpty) {
-      _name.value = _audios[_index].name;
-    }
-  }
-
-  final _audioPlayer = AudioPlayer();
-  final CancelToken _cancelToken = CancelToken();
-  final _name = "".obs;
-  late ConcatenatingAudioSource _playList;
-
-  final _duration = const Duration().obs;
-  final _currentPos = const Duration().obs;
-
-  final _playing = false.obs;
-  final _prepared = false.obs;
-
-  final _seekPos = (-1.0).obs;
-  List<StreamSubscription> streamSubscriptions = [];
-
-  @override
-  void onInit() {
-    super.onInit();
-    if (_index < 0 || _index >= _audios.length) {
-      _index = 0;
-    }
-    _createPlayListAndPlay();
-
-    var durationStreamSubscription =
-        _audioPlayer.durationStream.listen((event) {
-      if (event != null) {
-        _duration.value = event;
-      }
-    });
-    streamSubscriptions.add(durationStreamSubscription);
-    var positionStreamSubscription =
-        _audioPlayer.positionStream.listen((event) {
-      _currentPos.value = event;
-      if (_duration.value.inMilliseconds < _currentPos.value.inMilliseconds) {
-        _currentPos.value = _duration.value;
-      }
-    });
-    streamSubscriptions.add(positionStreamSubscription);
-    var sequenceStreamSubscription =
-        _audioPlayer.sequenceStateStream.listen((event) {
-      if (event != null && _audios.isNotEmpty) {
-        _index = event.currentIndex;
-        var item = event.currentSource?.tag as MediaItem?;
-        LogUtil.d("itemId=${item?.id}");
-        if (item?.id == _audios[_index].remotePath) {
-          _name.value = _audios[_index].name;
-        }
-      }
-    });
-    streamSubscriptions.add(sequenceStreamSubscription);
-    var stateStreamSubscription =
-        _audioPlayer.playerStateStream.listen((state) {
-      if (state.playing) {
-        _prepared.value = true;
-        _playing.value = true;
-      } else {
-        _playing.value = false;
-      }
-      if (state.processingState == ProcessingState.completed) {
-        _playNext();
-      }
-    });
-    streamSubscriptions.add(stateStreamSubscription);
-    // _audioPlayer.playbackEventStream.listen((event) {}, onError: (Object e, StackTrace st) {
-    //   _playNext();
-    // });
-  }
-
-  void _createPlayListAndPlay() async {
-    var sources = <AudioSource>[];
-    for (var audio in _audios) {
-      var uri = await FileUtils.makeFileLink(audio.remotePath, audio.sign);
-      if (uri != null) {
-        sources.add(
-          await _audioToUri(uri, audio),
-        );
-      }
-    }
-
-    _playList = ConcatenatingAudioSource(
-      useLazyPreparation: true,
-      shuffleOrder: DefaultShuffleOrder(),
-      children: sources,
-    );
-    _audioPlayer.setAudioSource(_playList, initialIndex: _index);
-    _audioPlayer.play();
-  }
-
-  Future<AudioSource> _audioToUri(String uri, AudioItem audio) async {
-    final mediaItem = MediaItem(
-      id: audio.remotePath,
-      title: audio.name,
-      artUri: Uri.parse("https://alistc.techyifu.com/ic_music_head.png"),
-    );
-
-    if (audio.localPath == null || audio.localPath!.isEmpty) {
-      AlistDatabaseController databaseController = Get.find();
-      UserController userController = Get.find();
-      var user = userController.user.value;
-
-      var record = await databaseController.downloadRecordRecordDao
-          .findRecordByRemotePath(
-              user.serverUrl, user.username, audio.remotePath);
-      if (record != null && io.File(record.localPath).existsSync()) {
-        audio.localPath = record.localPath;
-      }
-    }
-    if (audio.localPath != null && audio.localPath!.isNotEmpty) {
-      return ProgressiveAudioSource(
-        Uri.file(audio.localPath!),
-        tag: mediaItem,
-      );
-    } else {
-      if (GetPlatform.isDesktop) {
-        return ProgressiveAudioSource(Uri.parse(uri), tag: mediaItem);
-      } else {
-        var headers = <String, String>{};
-        if (audio.provider == "BaiduNetdisk") {
-          headers["User-Agent"] = "pan.baidu.com";
-        }
-        return AlistLockCachingAudioSource(
-          Uri.parse(uri),
-          headers: headers,
-          tag: mediaItem,
-        );
-      }
-    }
-  }
-
-  void _playNext() {
-    _currentPos.value = const Duration(milliseconds: 0);
-    if (_audioPlayer.hasNext) {
-      _audioPlayer.seekToNext();
-    } else {
-      var nextIndex = 0;
-      if (_playMode.value == PlayMode.random) {
-        nextIndex = Random().nextInt(_audios.length);
-      }
-      _audioPlayer.seek(const Duration(milliseconds: 0), index: nextIndex);
-    }
-    if (!_audioPlayer.playing) {
-      _audioPlayer.play();
-    }
-  }
-
-  void _playPrevious() {
-    _currentPos.value = const Duration(milliseconds: 0);
-    if (_audioPlayer.hasPrevious) {
-      _audioPlayer.seekToPrevious();
-    } else {
-      var previousIndex = 0;
-      if (_playMode.value == PlayMode.random) {
-        previousIndex = Random().nextInt(_audios.length);
-      }
-      _audioPlayer.seek(const Duration(milliseconds: 0), index: previousIndex);
-    }
-    if (!_audioPlayer.playing) {
-      _audioPlayer.play();
-    }
-  }
-
-  void _playOrPause() async {
-    if (_playing.value == true) {
-      await _audioPlayer.pause();
-    } else {
-      if (_duration.value.inMilliseconds <= _currentPos.value.inMilliseconds) {
-        await _audioPlayer.seek(const Duration(milliseconds: 0));
-        await _audioPlayer.play();
-      } else {
-        await _audioPlayer.play();
-      }
-    }
-  }
-
-  @override
-  void onClose() {
-    super.onClose();
-    _cancelToken.cancel();
-    _releasePlayer();
-
-    for (var element in streamSubscriptions) {
-      element.cancel();
-    }
-    streamSubscriptions = [];
-  }
-
-  void _releasePlayer() async {
-    await _audioPlayer.stop();
-    await _audioPlayer.dispose();
-  }
-
-  void _play(int index) {
-    _index = index;
-    _currentPos.value = const Duration(milliseconds: 0);
-    _audioPlayer.seek(Duration.zero, index: index);
-  }
-
-  void _remove(int index) {
-    if (_audios.length <= 1) {
-      SmartDialog.showToast(Intl.audioPlayListDialog_tips_deleteTheLast.tr);
-      return;
-    }
-
-    if (_index == index) {
-      _playNext();
-    }
-    _playList.removeAt(index);
-    _audios.removeAt(index);
-  }
-
-  void _changePlayMode() {
-    if (_playMode.value == PlayMode.single) {
-      _playMode.value = PlayMode.list;
-      SmartDialog.showToast(Intl.audioPlayerScreen_btn_sequence.tr);
-      _audioPlayer.setLoopMode(LoopMode.all);
-      _audioPlayer.setShuffleModeEnabled(false);
-    } else if (_playMode.value == PlayMode.list) {
-      _playMode.value = PlayMode.random;
-      SmartDialog.showToast(Intl.audioPlayerScreen_btn_shuffle.tr);
-      _audioPlayer.setLoopMode(LoopMode.all);
-      _audioPlayer.setShuffleModeEnabled(true);
-    } else if (_playMode.value == PlayMode.random) {
-      _playMode.value = PlayMode.single;
-      _audioPlayer.setLoopMode(LoopMode.one);
-      SmartDialog.showToast(Intl.audioPlayerScreen_btn_repeatOne.tr);
-    }
-  }
-}
-
 class _PlayButton extends StatelessWidget {
   const _PlayButton({Key? key, required this.playing, required this.onPressed})
       : super(key: key);
   final VoidCallback onPressed;
-
   final bool playing;
 
   @override
@@ -508,26 +267,4 @@ class _PlayButton extends StatelessWidget {
       onPressed: onPressed,
     );
   }
-}
-
-enum PlayMode {
-  single,
-  list,
-  random,
-}
-
-class AudioItem {
-  final String name;
-  String? localPath;
-  final String remotePath;
-  final String? sign;
-  final String? provider;
-
-  AudioItem({
-    required this.name,
-    this.localPath,
-    required this.remotePath,
-    this.sign,
-    this.provider,
-  });
 }

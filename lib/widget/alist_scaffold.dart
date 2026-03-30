@@ -1,4 +1,5 @@
 import 'package:alist/util/widget_utils.dart';
+import 'package:alist/widget/mini_audio_player.dart';
 import 'package:flutter/material.dart';
 
 class AlistScaffold extends StatelessWidget {
@@ -58,7 +59,14 @@ class AlistScaffold extends StatelessWidget {
                   title: appbarTitle,
                   actions: appbarActions,
                 ),
-          body: SafeArea(child: body),
+          body: SafeArea(
+            child: Column(
+              children: [
+                Expanded(child: body),
+                const MiniAudioPlayer(),
+              ],
+            ),
+          ),
         ));
   }
 }
