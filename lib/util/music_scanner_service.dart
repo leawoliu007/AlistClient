@@ -6,6 +6,7 @@ import 'package:alist/database/table/music_track.dart';
 import 'package:alist/entity/file_list_resp_entity.dart';
 import 'package:alist/net/dio_utils.dart';
 import 'package:alist/util/file_type.dart';
+import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:get/get.dart';
 
@@ -116,7 +117,7 @@ class MusicScannerService extends GetxService {
       name: file.name,
       remotePath: _combinePath(parentPath, file.name),
       libraryId: library.id ?? -1,
-      size: file.size,
+      size: file.size ?? 0,
       sign: file.sign,
       thumb: file.thumb,
       modified: modifyTime?.millisecondsSinceEpoch ?? 0,
