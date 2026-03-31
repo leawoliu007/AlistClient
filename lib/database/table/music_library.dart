@@ -20,6 +20,9 @@ class MusicLibrary {
   @ColumnInfo(name: 'create_time')
   final int createTime;
 
+  @ColumnInfo(name: 'max_depth')
+  final int maxDepth;
+
   MusicLibrary({
     this.id,
     required this.name,
@@ -27,5 +30,6 @@ class MusicLibrary {
     required this.serverUrl,
     required this.userId,
     required this.createTime,
+    this.maxDepth = 4,
   });
 }

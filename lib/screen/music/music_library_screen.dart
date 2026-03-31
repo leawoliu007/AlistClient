@@ -40,92 +40,16 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
     }
   }
 
-  void _addLibraryDialog() {
-    final TextEditingController _pathController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Add Music Library"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text("Enter the remote path on your Alist server that contains your music (e.g., /MyMusic):"),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _pathController,
-                decoration: const InputDecoration(
-                  labelText: "Remote Path",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("CANCEL"),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                String path = _pathController.text.trim();
-                if (path.isEmpty || !path.startsWith('/')) {
-                  SmartDialog.showToast("Path must start with '/'");
-                  return;
-                }
-                
-                final user = _userController.user.value;
-                
-                // check if already exists
-                var existing = await _dbController.musicLibraryDao.findByPath(user.serverUrl, user.username, path);
-                if (existing != null) {
-                  SmartDialog.showToast("Library already exists");
-                  Navigator.pop(context);
-                  return;
-                }
-                
-                String name = path.split('/').last;
-                if (name.isEmpty) name = "Root Music";
-
-                var newLib = MusicLibrary(
-                  name: name,
-                  remotePath: path,
-                  serverUrl: user.serverUrl,
-                  userId: user.username,
-                  createTime: DateTime.now().millisecondsSinceEpoch,
-                );
-                
-                int id = await _dbController.musicLibraryDao.insertLibrary(newLib);
-                newLib = MusicLibrary(
-                  id: id,
-                  name: name,
-                  remotePath: path,
-                  serverUrl: user.serverUrl,
-                  userId: user.username,
-                  createTime: newLib.createTime,
-                );
-                
-                Navigator.pop(context);
-                await _loadLibraries();
-                _scannerService.scanLibrary(newLib);
-              },
-              child: const Text("ADD & SCAN"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return AlistScaffold(
-      showLeading: false,
       appbarTitle: const Text("Music Library"),
       appbarActions: [
         IconButton(
-          icon: const Icon(Icons.add),
-          onPressed: _addLibraryDialog,
+          icon: const Icon(Icons.sync),
+          onPressed: () {
+            _scannerService.scanAllLibraries().then((_) => _loadLibraries());
+          },
         )
       ],
       body: Column(
@@ -166,16 +90,61 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
                         leading: const Icon(Icons.library_music, size: 40),
                         title: Text(lib.name),
                         subtitle: Text(lib.remotePath),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () async {
-                            await _dbController.musicTrackDao.deleteTracksByLibraryId(lib.id!);
-                            await _dbController.musicLibraryDao.deleteById(lib.id!);
-                            _loadLibraries();
-                          },
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text("Depth: ${lib.maxDepth}", style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                            IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () async {
+                                await _dbController.musicTrackDao.deleteTracksByLibraryId(lib.id!);
+                                await _dbController.musicLibraryDao.deleteById(lib.id!);
+                                _loadLibraries();
+                              },
+                            ),
+                          ],
                         ),
                         onTap: () {
                           Get.to(() => MusicPlaylistScreen(library: lib));
+                        },
+                        onLongPress: () {
+                          final TextEditingController _depthController = TextEditingController(text: lib.maxDepth.toString());
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text("Set Scan Depth"),
+                              content: TextField(
+                                controller: _depthController,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(labelText: "Max Depth (Layers)"),
+                              ),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCEL")),
+                                TextButton(
+                                  onPressed: () async {
+                                    int? depth = int.tryParse(_depthController.text);
+                                    if (depth != null && depth >= 0) {
+                                      var updatedLib = MusicLibrary(
+                                        id: lib.id,
+                                        name: lib.name,
+                                        remotePath: lib.remotePath,
+                                        serverUrl: lib.serverUrl,
+                                        userId: lib.userId,
+                                        createTime: lib.createTime,
+                                        maxDepth: depth,
+                                      );
+                                      await _dbController.musicLibraryDao.updateLibrary(updatedLib);
+                                      Navigator.pop(context);
+                                      _loadLibraries();
+                                      _scannerService.scanLibrary(updatedLib);
+                                      SmartDialog.showToast("Depth updated to $depth. Scanning...");
+                                    }
+                                  },
+                                  child: const Text("SAVE"),
+                                ),
+                              ],
+                            ),
+                          );
                         },
                       );
                     },

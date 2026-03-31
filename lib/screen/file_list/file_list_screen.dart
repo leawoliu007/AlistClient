@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/database/dao/favorite_dao.dart';
 import 'package:alist/database/table/favorite.dart';
+import 'package:alist/database/table/music_library.dart';
 import 'package:alist/database/table/file_password.dart';
 import 'package:alist/database/table/file_viewing_record.dart';
 import 'package:alist/entity/file_list_resp_entity.dart';
@@ -28,6 +29,7 @@ import 'package:alist/screen/video_player_screen.dart';
 import 'package:alist/util/alist_plugin.dart';
 import 'package:alist/util/constant.dart';
 import 'package:alist/util/download/download_manager.dart';
+import 'package:alist/util/music_scanner_service.dart';
 import 'package:alist/util/file_password_helper.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
@@ -694,6 +696,44 @@ class _FileListScreenState extends State<FileListScreen>
                     },
                   ),
                   const Divider(),
+                  if (file.isDir)
+                    FutureBuilder<MusicLibrary?>(
+                      future: _databaseController.musicLibraryDao.findByPath(user.serverUrl, user.username, file.path),
+                      builder: (context, snapshot) {
+                        return ListTile(
+                          leading: Icon(snapshot.data != null ? Icons.library_music : Icons.library_music_outlined),
+                          title: Text(snapshot.data != null ? "Remove from Music Library" : "Add to Music Library"),
+                          onTap: () async {
+                            Navigator.pop(context);
+                            if (snapshot.data != null) {
+                              var musicLib = snapshot.data!;
+                              await _databaseController.musicTrackDao.deleteTracksByLibraryId(musicLib.id!);
+                              await _databaseController.musicLibraryDao.deleteById(musicLib.id!);
+                              SmartDialog.showToast("Removed from Music Library");
+                            } else {
+                              var newLib = MusicLibrary(
+                                name: file.name,
+                                remotePath: file.path,
+                                serverUrl: user.serverUrl,
+                                userId: user.username,
+                                createTime: DateTime.now().millisecondsSinceEpoch,
+                              );
+                              int id = await _databaseController.musicLibraryDao.insertLibrary(newLib);
+                              newLib = MusicLibrary(
+                                id: id,
+                                name: newLib.name,
+                                remotePath: newLib.remotePath,
+                                serverUrl: newLib.serverUrl,
+                                userId: newLib.userId,
+                                createTime: newLib.createTime,
+                              );
+                              MusicScannerService.instance.scanLibrary(newLib);
+                              SmartDialog.showToast("Added to Music Library & Scanning...");
+                            }
+                          },
+                        );
+                      },
+                    ),
                   ListTile(
                     leading: const Icon(Icons.open_in_new),
                     title: Text(Intl.fileList_menu_open.tr),

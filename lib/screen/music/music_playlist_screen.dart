@@ -58,7 +58,6 @@ class _MusicPlaylistScreenState extends State<MusicPlaylistScreen> {
   @override
   Widget build(BuildContext context) {
     return AlistScaffold(
-      showLeading: true,
       appbarTitle: Text(widget.library.name),
       appbarActions: [
         IconButton(
