@@ -8,6 +8,7 @@ import 'package:alist/net/dio_utils.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/user_controller.dart';
+import 'package:flustars/flustars.dart';
 import 'package:get/get.dart';
 
 class MusicScannerService extends GetxService {
