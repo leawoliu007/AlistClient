@@ -42,13 +42,13 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: app-release
-        path: build/app/outputs/flutter-apk/app-release.apk
+        path: build/app/outputs/flutter-apk/AlistClientNow-release.apk
 
     - name: Publish to GitHub Releases
-      if: github.event_name == 'push'
+      if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
       uses: softprops/action-gh-release@v2
       with:
         tag_name: "v1.0.${{ github.run_number }}"
         name: "Automated Build v1.0.${{ github.run_number }}"
-        files: build/app/outputs/flutter-apk/app-release.apk
+        files: build/app/outputs/flutter-apk/AlistClientNow-release.apk
         generate_release_notes: true
