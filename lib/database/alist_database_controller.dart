@@ -8,6 +8,8 @@ import 'package:alist/database/dao/file_password_dao.dart';
 import 'package:alist/database/dao/file_viewing_record_dao.dart';
 import 'package:alist/database/dao/server_dao.dart';
 import 'package:alist/database/dao/video_viewing_record_dao.dart';
+import 'package:alist/database/dao/music_library_dao.dart';
+import 'package:alist/database/dao/music_track_dao.dart';
 import 'package:floor/floor.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
@@ -21,6 +23,8 @@ class AlistDatabaseController extends GetxController {
   late final ServerDao serverDao;
   late final FileViewingRecordDao fileViewingRecordDao;
   late final FavoriteDao favoriteDao;
+  late final MusicLibraryDao musicLibraryDao;
+  late final MusicTrackDao musicTrackDao;
 
   // create migration
   final _migration1to2 = Migration(1, 2, (database) async {
@@ -62,6 +66,14 @@ class AlistDatabaseController extends GetxController {
         'CREATE TABLE IF NOT EXISTS `favorite` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `is_dir` INTEGER NOT NULL, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `remote_path` TEXT NOT NULL, `name` TEXT NOT NULL, `size` INTEGER NOT NULL, `sign` TEXT, `thumb` TEXT, `modified` INTEGER NOT NULL, `provider` TEXT NOT NULL, `create_time` INTEGER NOT NULL, `path` TEXT NOT NULL)');
   });
 
+  // create migration (5 to 6)
+  final _migration5to6 = Migration(5, 6, (database) async {
+    await database.execute(
+        'CREATE TABLE IF NOT EXISTS `music_library` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT NOT NULL, `remote_path` TEXT NOT NULL, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `create_time` INTEGER NOT NULL)');
+    await database.execute(
+        'CREATE TABLE IF NOT EXISTS `music_track` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT NOT NULL, `remote_path` TEXT NOT NULL, `library_id` INTEGER NOT NULL, `size` INTEGER NOT NULL, `sign` TEXT, `thumb` TEXT, `modified` INTEGER NOT NULL, `provider` TEXT NOT NULL, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `create_time` INTEGER NOT NULL)');
+  });
+
   Future<void> init() async {
     var dbName = "alist.db";
     if (Platform.isIOS) {
@@ -82,6 +94,7 @@ class AlistDatabaseController extends GetxController {
       _migration2to3,
       _migration3to4,
       _migration4to5,
+      _migration5to6,
     ]).build();
     videoViewingRecordDao = database.videoViewingRecordDao;
     downloadRecordRecordDao = database.downloadRecordRecordDao;
@@ -89,5 +102,7 @@ class AlistDatabaseController extends GetxController {
     serverDao = database.serverDao;
     fileViewingRecordDao = database.fileViewingRecordDao;
     favoriteDao = database.favoriteDao;
+    musicLibraryDao = database.musicLibraryDao;
+    musicTrackDao = database.musicTrackDao;
   }
 }

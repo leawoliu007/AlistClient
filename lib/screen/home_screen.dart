@@ -17,6 +17,7 @@ import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:alist/screen/music/music_library_screen.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'favorite_screen.dart';
@@ -55,6 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const RecentsScreen(),
           const FavoriteScreen(),
+          const MusicLibraryScreen(),
           const SettingsScreen(),
         ],
       ),
@@ -71,6 +73,10 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(
             icon: const Icon(Icons.star_rounded),
             label: Intl.screenName_favorite.tr,
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.library_music_rounded),
+            label: "Music",
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.settings_rounded),
