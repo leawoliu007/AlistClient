@@ -27,15 +27,8 @@ class MusicScannerService extends GetxService {
     scanStatus.value = "Starting scan: ${library.name} ...";
     
     try {
-      List<MusicTrack> tracksToSave = [];
-      await _scanDirectory(library.remotePath, library, tracksToSave);
-      
-      // Save to database
-      scanStatus.value = "Saving ${tracksToSave.length} tracks to database...";
-      if (library.id != null) {
-        await _dbController.musicTrackDao.replaceAllTracksForLibrary(library.id!, tracksToSave);
-      }
-      scanStatus.value = "Scan complete: Found ${tracksToSave.length} tracks.";
+      await _scanLibraryCore(library);
+      scanStatus.value = "Scan complete.";
     } catch (e) {
       scanStatus.value = "Scan failed: $e";
     } finally {
@@ -43,6 +36,41 @@ class MusicScannerService extends GetxService {
         isScanning.value = false;
         scanStatus.value = "";
       });
+    }
+  }
+
+  Future<void> scanAllLibraries() async {
+    if (isScanning.value) return;
+
+    final user = _userController.user.value;
+    final libs = await _dbController.musicLibraryDao.findLibraries(user.serverUrl, user.username);
+    if (libs.isEmpty) return;
+
+    isScanning.value = true;
+    try {
+      for (var lib in libs) {
+        scanStatus.value = "Scanning library: ${lib.name} ...";
+        await _scanLibraryCore(lib);
+      }
+      scanStatus.value = "Global Scan complete.";
+    } catch (e) {
+      scanStatus.value = "Global Scan failed: $e";
+    } finally {
+      Future.delayed(const Duration(seconds: 3), () {
+        isScanning.value = false;
+        scanStatus.value = "";
+      });
+    }
+  }
+
+  Future<void> _scanLibraryCore(MusicLibrary library) async {
+    List<MusicTrack> tracksToSave = [];
+    await _scanDirectory(library.remotePath, library, tracksToSave);
+    
+    // Save to database
+    scanStatus.value = "Saving ${tracksToSave.length} tracks to database...";
+    if (library.id != null) {
+      await _dbController.musicTrackDao.replaceAllTracksForLibrary(library.id!, tracksToSave);
     }
   }
 

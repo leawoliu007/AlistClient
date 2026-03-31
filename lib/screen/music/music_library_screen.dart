@@ -40,91 +40,16 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
     }
   }
 
-  void _addLibraryDialog() {
-    final TextEditingController _pathController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Add Music Library"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text("Enter the remote path on your Alist server that contains your music (e.g., /MyMusic):"),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _pathController,
-                decoration: const InputDecoration(
-                  labelText: "Remote Path",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("CANCEL"),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                String path = _pathController.text.trim();
-                if (path.isEmpty || !path.startsWith('/')) {
-                  SmartDialog.showToast("Path must start with '/'");
-                  return;
-                }
-                
-                final user = _userController.user.value;
-                
-                // check if already exists
-                var existing = await _dbController.musicLibraryDao.findByPath(user.serverUrl, user.username, path);
-                if (existing != null) {
-                  SmartDialog.showToast("Library already exists");
-                  Navigator.pop(context);
-                  return;
-                }
-                
-                String name = path.split('/').last;
-                if (name.isEmpty) name = "Root Music";
-
-                var newLib = MusicLibrary(
-                  name: name,
-                  remotePath: path,
-                  serverUrl: user.serverUrl,
-                  userId: user.username,
-                  createTime: DateTime.now().millisecondsSinceEpoch,
-                );
-                
-                int id = await _dbController.musicLibraryDao.insertLibrary(newLib);
-                newLib = MusicLibrary(
-                  id: id,
-                  name: name,
-                  remotePath: path,
-                  serverUrl: user.serverUrl,
-                  userId: user.username,
-                  createTime: newLib.createTime,
-                );
-                
-                Navigator.pop(context);
-                await _loadLibraries();
-                _scannerService.scanLibrary(newLib);
-              },
-              child: const Text("ADD & SCAN"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return AlistScaffold(
       appbarTitle: const Text("Music Library"),
       appbarActions: [
         IconButton(
-          icon: const Icon(Icons.add),
-          onPressed: _addLibraryDialog,
+          icon: const Icon(Icons.sync),
+          onPressed: () {
+            _scannerService.scanAllLibraries().then((_) => _loadLibraries());
+          },
         )
       ],
       body: Column(
