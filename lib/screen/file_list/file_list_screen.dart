@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:alist/database/alist_database_controller.dart';
+import 'package:alist/database/dao/favorite_dao.dart';
 import 'package:alist/database/table/favorite.dart';
 import 'package:alist/database/table/music_library.dart';
 import 'package:alist/database/table/file_password.dart';
