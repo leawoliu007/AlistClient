@@ -90,16 +90,61 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
                         leading: const Icon(Icons.library_music, size: 40),
                         title: Text(lib.name),
                         subtitle: Text(lib.remotePath),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () async {
-                            await _dbController.musicTrackDao.deleteTracksByLibraryId(lib.id!);
-                            await _dbController.musicLibraryDao.deleteById(lib.id!);
-                            _loadLibraries();
-                          },
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text("Depth: ${lib.maxDepth}", style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                            IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () async {
+                                await _dbController.musicTrackDao.deleteTracksByLibraryId(lib.id!);
+                                await _dbController.musicLibraryDao.deleteById(lib.id!);
+                                _loadLibraries();
+                              },
+                            ),
+                          ],
                         ),
                         onTap: () {
                           Get.to(() => MusicPlaylistScreen(library: lib));
+                        },
+                        onLongPress: () {
+                          final TextEditingController _depthController = TextEditingController(text: lib.maxDepth.toString());
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text("Set Scan Depth"),
+                              content: TextField(
+                                controller: _depthController,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(labelText: "Max Depth (Layers)"),
+                              ),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCEL")),
+                                TextButton(
+                                  onPressed: () async {
+                                    int? depth = int.tryParse(_depthController.text);
+                                    if (depth != null && depth >= 0) {
+                                      var updatedLib = MusicLibrary(
+                                        id: lib.id,
+                                        name: lib.name,
+                                        remotePath: lib.remotePath,
+                                        serverUrl: lib.serverUrl,
+                                        userId: lib.userId,
+                                        createTime: lib.createTime,
+                                        maxDepth: depth,
+                                      );
+                                      await _dbController.musicLibraryDao.updateLibrary(updatedLib);
+                                      Navigator.pop(context);
+                                      _loadLibraries();
+                                      _scannerService.scanLibrary(updatedLib);
+                                      SmartDialog.showToast("Depth updated to $depth. Scanning...");
+                                    }
+                                  },
+                                  child: const Text("SAVE"),
+                                ),
+                              ],
+                            ),
+                          );
                         },
                       );
                     },

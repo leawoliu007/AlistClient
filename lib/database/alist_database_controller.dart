@@ -74,6 +74,12 @@ class AlistDatabaseController extends GetxController {
         'CREATE TABLE IF NOT EXISTS `music_track` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT NOT NULL, `remote_path` TEXT NOT NULL, `library_id` INTEGER NOT NULL, `size` INTEGER NOT NULL, `sign` TEXT, `thumb` TEXT, `modified` INTEGER NOT NULL, `provider` TEXT NOT NULL, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `create_time` INTEGER NOT NULL)');
   });
 
+  // create migration (6 to 7)
+  final _migration6to7 = Migration(6, 7, (database) async {
+    await database.execute(
+        'ALTER TABLE `music_library` ADD COLUMN `max_depth` INTEGER NOT NULL DEFAULT 4');
+  });
+
   Future<void> init() async {
     var dbName = "alist.db";
     if (Platform.isIOS) {
@@ -95,6 +101,7 @@ class AlistDatabaseController extends GetxController {
       _migration3to4,
       _migration4to5,
       _migration5to6,
+      _migration6to7,
     ]).build();
     videoViewingRecordDao = database.videoViewingRecordDao;
     downloadRecordRecordDao = database.downloadRecordRecordDao;

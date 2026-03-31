@@ -65,7 +65,7 @@ class MusicScannerService extends GetxService {
 
   Future<void> _scanLibraryCore(MusicLibrary library) async {
     List<MusicTrack> tracksToSave = [];
-    await _scanDirectory(library.remotePath, library, tracksToSave);
+    await _scanDirectory(library.remotePath, library, tracksToSave, 0);
     
     // Save to database
     scanStatus.value = "Saving ${tracksToSave.length} tracks to database...";
@@ -74,12 +74,19 @@ class MusicScannerService extends GetxService {
     }
   }
 
-  Future<void> _scanDirectory(String path, MusicLibrary library, List<MusicTrack> accTracks) async {
-    if (!isScanning.value) return; // allows cancellation
-    scanStatus.value = "Scanning folder: $path";
+  Future<void> _scanDirectory(String path, MusicLibrary library, List<MusicTrack> accTracks, int depth) async {
+    if (!isScanning.value) return; 
+    
+    // Normalize path: ensure no trailing slash unless it's root
+    String normalizedPath = path;
+    if (normalizedPath.length > 1 && normalizedPath.endsWith('/')) {
+      normalizedPath = normalizedPath.substring(0, normalizedPath.length - 1);
+    }
+
+    scanStatus.value = "Scanning (Depth $depth): $normalizedPath... (Tracks: ${accTracks.length})";
     
     var body = {
-      "path": path,
+      "path": normalizedPath,
       "password": "", 
       "page": 1,
       "per_page": 0,
@@ -93,37 +100,35 @@ class MusicScannerService extends GetxService {
       "fs/list", 
       params: body,
       onSuccess: (data) async {
-        if (data == null) {
-          completer.complete();
-          return;
-        }
+        try {
+          if (data == null) {
+             return;
+          }
 
-        var contents = data.content ?? [];
-        String provider = data.provider ?? "";
-        
-        List<String> subDirs = [];
-        
-        for (var file in contents) {
-          if (file.isDir) {
-            String subPath = _combinePath(path, file.name);
-            subDirs.add(subPath);
-          } else {
-            // Check if it's an audio file
-            if (file.getFileType() == FileType.audio) {
-              accTracks.add(_fileToTrack(file, path, library, provider, data));
+          var contents = data.content ?? [];
+          String provider = data.provider ?? "";
+          
+          for (var file in contents) {
+            if (file.isDir) {
+              // Check max depth before recursing
+              if (depth < library.maxDepth) {
+                String subPath = _combinePath(normalizedPath, file.name);
+                await _scanDirectory(subPath, library, accTracks, depth + 1);
+              }
+            } else {
+              if (file.getFileType() == FileType.audio) {
+                accTracks.add(_fileToTrack(file, normalizedPath, library, provider, data));
+              }
             }
           }
-        }
-        
-        completer.complete();
-        
-        // Scan subdirectories sequentially
-        for (var sub in subDirs) {
-          await _scanDirectory(sub, library, accTracks);
+        } catch (e) {
+          LogUtil.e("Scan internal error for $normalizedPath: $e");
+        } finally {
+          completer.complete();
         }
       },
       onError: (code, msg) {
-        scanStatus.value = "Error scanning $path: $msg";
+        LogUtil.e("Scan network error for $normalizedPath: $code - $msg");
         completer.complete();
       }
     );
