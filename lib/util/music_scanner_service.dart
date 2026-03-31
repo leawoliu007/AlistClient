@@ -1,0 +1,129 @@
+import 'dart:async';
+
+import 'package:alist/database/alist_database_controller.dart';
+import 'package:alist/database/table/music_library.dart';
+import 'package:alist/database/table/music_track.dart';
+import 'package:alist/entity/file_list_resp_entity.dart';
+import 'package:alist/net/dio_utils.dart';
+import 'package:alist/util/file_type.dart';
+import 'package:alist/util/user_controller.dart';
+import 'package:get/get.dart';
+
+class MusicScannerService extends GetxService {
+  static MusicScannerService get instance => Get.find<MusicScannerService>();
+
+  final AlistDatabaseController _dbController = Get.find();
+  final UserController _userController = Get.find();
+
+  final RxBool isScanning = false.obs;
+  final RxString scanStatus = "".obs;
+  
+  // Scans an existing MusicLibrary
+  Future<void> scanLibrary(MusicLibrary library) async {
+    if (isScanning.value) return;
+
+    isScanning.value = true;
+    scanStatus.value = "Starting scan: ${library.name} ...";
+    
+    try {
+      List<MusicTrack> tracksToSave = [];
+      await _scanDirectory(library.remotePath, library, tracksToSave);
+      
+      // Save to database
+      scanStatus.value = "Saving ${tracksToSave.length} tracks to database...";
+      if (library.id != null) {
+        await _dbController.musicTrackDao.replaceAllTracksForLibrary(library.id!, tracksToSave);
+      }
+      scanStatus.value = "Scan complete: Found ${tracksToSave.length} tracks.";
+    } catch (e) {
+      scanStatus.value = "Scan failed: $e";
+    } finally {
+      Future.delayed(const Duration(seconds: 3), () {
+        isScanning.value = false;
+        scanStatus.value = "";
+      });
+    }
+  }
+
+  Future<void> _scanDirectory(String path, MusicLibrary library, List<MusicTrack> accTracks) async {
+    if (!isScanning.value) return; // allows cancellation
+    scanStatus.value = "Scanning folder: $path";
+    
+    var body = {
+      "path": path,
+      "password": "", 
+      "page": 1,
+      "per_page": 0,
+      "refresh": false
+    };
+
+    final completer = Completer<void>();
+    
+    DioUtils.instance.requestNetwork<FileListRespEntity>(
+      Method.post, 
+      "fs/list", 
+      params: body,
+      onSuccess: (data) async {
+        if (data == null) {
+          completer.complete();
+          return;
+        }
+
+        var contents = data.content ?? [];
+        String provider = data.provider ?? "";
+        
+        List<String> subDirs = [];
+        
+        for (var file in contents) {
+          if (file.isDir) {
+            String subPath = _combinePath(path, file.name);
+            subDirs.add(subPath);
+          } else {
+            // Check if it's an audio file
+            if (file.getFileType() == FileType.audio) {
+              accTracks.add(_fileToTrack(file, path, library, provider, data));
+            }
+          }
+        }
+        
+        completer.complete();
+        
+        // Scan subdirectories sequentially
+        for (var sub in subDirs) {
+          await _scanDirectory(sub, library, accTracks);
+        }
+      },
+      onError: (code, msg) {
+        scanStatus.value = "Error scanning $path: $msg";
+        completer.complete();
+      }
+    );
+    
+    await completer.future;
+  }
+  
+  String _combinePath(String parent, String name) {
+    if (parent == '/') return '/$name';
+    if (parent.endsWith('/')) return '$parent$name';
+    return '$parent/$name';
+  }
+
+  MusicTrack _fileToTrack(FileListRespContent file, String parentPath, MusicLibrary library, String provider, FileListRespEntity data) {
+    var user = _userController.user.value;
+    DateTime? modifyTime = file.parseModifiedTime();
+    
+    return MusicTrack(
+      name: file.name,
+      remotePath: _combinePath(parentPath, file.name),
+      libraryId: library.id ?? -1,
+      size: file.size,
+      sign: file.sign,
+      thumb: file.thumb,
+      modified: modifyTime?.millisecondsSinceEpoch ?? 0,
+      provider: provider,
+      serverUrl: user.serverUrl,
+      userId: user.username,
+      createTime: DateTime.now().millisecondsSinceEpoch,
+    );
+  }
+}

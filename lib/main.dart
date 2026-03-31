@@ -17,6 +17,7 @@ import 'database/alist_database_controller.dart';
 import 'generated/color_schemes.g.dart';
 
 import 'package:alist/util/audio_player_service.dart';
+import 'package:alist/util/music_scanner_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +54,7 @@ class MyApp extends StatelessWidget {
     Get.put(UserController());
     Get.put(ProxyServer());
     Get.put(AudioPlayerService(), permanent: true);
+    Get.put(MusicScannerService(), permanent: true);
 
     return MediaQuery(
       data: MediaQuery.of(context).copyWith(textScaleFactor: 1),
