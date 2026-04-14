@@ -13,7 +13,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/route_manager.dart';
 
 import 'base_entity.dart';
-import 'package:native_dio_adapter/native_dio_adapter.dart';
+import 'native_http_adapter.dart';
 import 'package:dio/io.dart';
 
 /// 默认dio配置
@@ -76,9 +76,9 @@ class DioUtils {
     _streamDio = Dio(options);
 
     if (Platform.isAndroid) {
-      _dio.httpClientAdapter = NativeAdapter();
-      _streamDio.httpClientAdapter = NativeAdapter();
-      Log.d("Using NativeAdapter for Dio (with Conscrypt support)");
+      _dio.httpClientAdapter = NativeHttpAdapter();
+      _streamDio.httpClientAdapter = NativeHttpAdapter();
+      Log.d("Using NativeHttpAdapter for Dio (with Conscrypt support)");
     } else {
       ignoreSSLError ??= _ignoreSSLError;
       if (ignoreSSLError == true) {
