@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.1.1+13
 
 environment:
-  sdk: '>=2.19.6 <3.0.0'
+  sdk: '>=2.19.6 <4.0.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -39,7 +39,7 @@ dependencies:
   get: ^4.6.5
   # http request
   dio: ^5.1.1
-  cronet_http: ^0.1.2
+  cronet_http: ^1.1.0
   # key value
   shared_preferences: ^2.1.0
   flustars: ^2.0.1

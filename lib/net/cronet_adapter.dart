@@ -25,7 +25,7 @@ class CronetAdapter implements HttpClientAdapter {
     return ResponseBody(
       response.stream,
       response.statusCode,
-      headers: response.headers.map((k, v) => MapEntry(k, [v])),
+      headers: response.headers.map((k, v) => MapEntry(k.toLowerCase(), v.split(','))),
       statusMessage: response.reasonPhrase,
       isRedirect: response.isRedirect,
     );
@@ -37,6 +37,11 @@ class CronetAdapter implements HttpClientAdapter {
   ) async {
     final request = StreamedRequest(options.method, options.uri);
     request.headers.addAll(options.headers.map((k, v) => MapEntry(k, v.toString())));
+    
+    // Set content-length if provided by Dio to help Cronet optimize
+    if (options.headers.containsKey('content-length')) {
+      request.contentLength = int.tryParse(options.headers['content-length'].toString());
+    }
 
     if (requestStream != null) {
       requestStream.listen(
