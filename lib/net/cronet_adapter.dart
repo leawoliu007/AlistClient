@@ -9,7 +9,7 @@ class CronetAdapter implements HttpClientAdapter {
   late final CronetClient _client;
 
   CronetAdapter(this.engine) {
-    _client = CronetClient(engine);
+    _client = CronetClient.fromCronetEngine(engine);
   }
 
   @override
@@ -23,7 +23,7 @@ class CronetAdapter implements HttpClientAdapter {
     );
 
     return ResponseBody(
-      response.stream,
+      response.stream.cast<Uint8List>(),
       response.statusCode,
       headers: response.headers.map((k, v) => MapEntry(k.toLowerCase(), v.split(','))),
       statusMessage: response.reasonPhrase,
