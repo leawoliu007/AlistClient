@@ -13,8 +13,10 @@ import 'package:flutter/foundation.dart';
 import 'package:get/route_manager.dart';
 
 import 'base_entity.dart';
-import 'native_http_adapter.dart';
+import 'package:cronet_http/cronet_http.dart';
+import 'cronet_adapter.dart';
 import 'package:dio/io.dart';
+import 'package:dio/dio.dart';
 
 /// 默认dio配置
 Duration _connectTimeout = const Duration(seconds: 15);
@@ -48,9 +50,18 @@ typedef NetErrorCallback = Function(int code, String msg);
 class DioUtils {
   factory DioUtils() => _singleton;
   
+  static CronetEngine? _cronetEngine;
+
   static Future<void> initCronet() async {
-    // Cronet is disabled due to minSdkVersion requirement.
-    // NativeAdapter + Conscrypt will handle TLS 1.3 instead.
+    if (Platform.isAndroid && _cronetEngine == null) {
+      try {
+        _cronetEngine = await CronetEngine.build();
+        Log.d("CronetEngine initialized successfully: ${_cronetEngine?.runtimeType}");
+        _singleton._dioInit(); // Re-initialize to apply CronetAdapter
+      } catch (e) {
+        Log.e("CronetEngine initialization failed: $e");
+      }
+    }
   }
 
   DioUtils._() {
@@ -75,18 +86,18 @@ class DioUtils {
     _dio = Dio(options);
     _streamDio = Dio(options);
 
-    if (Platform.isAndroid) {
-      _dio.httpClientAdapter = NativeHttpAdapter();
-      _streamDio.httpClientAdapter = NativeHttpAdapter();
-      Log.d("Using NativeHttpAdapter for Dio (with Conscrypt support)");
+    ignoreSSLError ??= _ignoreSSLError;
+    if (ignoreSSLError == true) {
+      // If user wants to ignore SSL errors, use IOHttpClientAdapter which supports badCertificateCallback
+      _dioIgnoreSSLError(dio);
+      _dioIgnoreSSLError(_streamDio);
+      Log.d("Using IOHttpClientAdapter with SSL bypass");
+    } else if (Platform.isAndroid && _cronetEngine != null) {
+      _dio.httpClientAdapter = CronetAdapter(_cronetEngine!);
+      _streamDio.httpClientAdapter = CronetAdapter(_cronetEngine!);
+      Log.d("Using CronetAdapter for Dio (with full TLS 1.3 support)");
     } else {
-      ignoreSSLError ??= _ignoreSSLError;
-      if (ignoreSSLError == true) {
-        _dioIgnoreSSLError(dio);
-        _dioIgnoreSSLError(_streamDio);
-      } else {
-        _streamDio.httpClientAdapter = IOHttpClientAdapter();
-      }
+      _streamDio.httpClientAdapter = IOHttpClientAdapter();
     }
 
     /// 添加拦截器
@@ -326,19 +337,9 @@ class DioUtils {
    void _dioIgnoreSSLError(Dio dio) {
     dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
-        // Use a customized context to improve compatibility on older Android devices
-        final SecurityContext context = SecurityContext(withTrustedRoots: true);
-        final client = HttpClient(context: context)
-          ..idleTimeout = const Duration(seconds: 3);
-        
+        final client = HttpClient();
         client.badCertificateCallback = (cert, host, port) => true;
-        
-        // Some older systems might benefit from explicitly handling connections
-        // However, TLS 1.3 issues are often baked into the system's BoringSSL
         return client;
-      },
-      validateCertificate: (cert, host, port) {
-        return true;
       },
     );
   }
