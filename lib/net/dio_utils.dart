@@ -13,9 +13,8 @@ import 'package:flutter/foundation.dart';
 import 'package:get/route_manager.dart';
 
 import 'base_entity.dart';
-import 'package:cronet_http/cronet_http.dart';
-import 'cronet_adapter.dart';
-import 'package:dio/src/adapters/io_adapter.dart';
+import 'package:native_dio_adapter/native_dio_adapter.dart';
+import 'package:dio/io.dart';
 
 /// 默认dio配置
 Duration _connectTimeout = const Duration(seconds: 15);
@@ -49,18 +48,9 @@ typedef NetErrorCallback = Function(int code, String msg);
 class DioUtils {
   factory DioUtils() => _singleton;
   
-  static CronetEngine? _cronetEngine;
-
   static Future<void> initCronet() async {
-    if (Platform.isAndroid && _cronetEngine == null) {
-      try {
-        _cronetEngine = await CronetEngine.build();
-        Log.d("CronetEngine initialized successfully: ${_cronetEngine?.runtimeType}");
-        _singleton._dioInit(); // Re-initialize to apply CronetAdapter
-      } catch (e) {
-        Log.e("CronetEngine initialization failed: $e");
-      }
-    }
+    // Cronet is disabled due to minSdkVersion requirement.
+    // NativeAdapter + Conscrypt will handle TLS 1.3 instead.
   }
 
   DioUtils._() {
@@ -85,10 +75,10 @@ class DioUtils {
     _dio = Dio(options);
     _streamDio = Dio(options);
 
-    if (Platform.isAndroid && _cronetEngine != null) {
-      _dio.httpClientAdapter = CronetAdapter(_cronetEngine!);
-      _streamDio.httpClientAdapter = CronetAdapter(_cronetEngine!);
-      Log.d("Using CronetAdapter for Dio");
+    if (Platform.isAndroid) {
+      _dio.httpClientAdapter = NativeAdapter();
+      _streamDio.httpClientAdapter = NativeAdapter();
+      Log.d("Using NativeAdapter for Dio (with Conscrypt support)");
     } else {
       ignoreSSLError ??= _ignoreSSLError;
       if (ignoreSSLError == true) {
