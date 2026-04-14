@@ -39,7 +39,7 @@ dependencies:
   get: ^4.6.5
   # http request
   dio: ^5.1.1
-  native_dio_adapter: 1.0.1
+  native_dio_adapter: 1.4.1
   # key value
   shared_preferences: ^2.1.0
   flustars: ^2.0.1
