@@ -28,6 +28,10 @@ class NetErrorHandler {
     }
     if (error is DioException) {
       if (error.error is HandshakeException) {
+        final handshakeMsg = error.error.toString().toLowerCase();
+        if (handshakeMsg.contains("ssl") || handshakeMsg.contains("protocol") || handshakeMsg.contains("version") || handshakeMsg.contains("handshake")) {
+          return "${Intl.net_error_certificate_error.tr}\n(可能是系统 TLS 版本过低，请尝试切换为 http 或调低服务器 TLS 限制)";
+        }
         return Intl.net_error_certificate_error.tr;
       }
       Log.d(error.type.toString());

@@ -6,10 +6,13 @@ import com.shuyu.gsyvideoplayer.GSYVideoManager
 import com.shuyu.gsyvideoplayer.model.VideoOptionModel
 import io.flutter.app.FlutterApplication
 import tv.danmaku.ijk.media.player.IjkMediaPlayer
-
+import org.conscrypt.Conscrypt
+import java.security.Security
 
 class App : FlutterApplication() {
     override fun onCreate() {
+        // Insert Conscrypt at position 1 to override the system's old provider
+        Security.insertProviderAt(Conscrypt.newProvider(), 1)
         super.onCreate()
 
         val gsyOptionModelList = mutableListOf<VideoOptionModel>()

@@ -121,4 +121,6 @@ dependencies {
 //    implementation 'com.github.CarGuo.GSYVideoPlayer:gsyVideoPlayer-arm64:v8.4.0-release-jitpack'
 //    implementation 'com.github.CarGuo.GSYVideoPlayer:gsyVideoPlayer-armv7a:v8.4.0-release-jitpack'
     implementation 'com.github.CarGuo.GSYVideoPlayer:gsyVideoPlayer-ex_so:v8.4.0-release-jitpack'
+    implementation 'org.conscrypt:conscrypt-android:2.5.2'
+    implementation 'org.chromium.net:cronet-embedded:113.5672.61'
 }

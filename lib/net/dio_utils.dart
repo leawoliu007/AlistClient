@@ -13,6 +13,9 @@ import 'package:flutter/foundation.dart';
 import 'package:get/route_manager.dart';
 
 import 'base_entity.dart';
+import 'package:cronet_http/cronet_http.dart';
+import 'package:cronet_http_adapter/cronet_http_adapter.dart';
+import 'package:dio/src/adapters/io_adapter.dart';
 
 /// 默认dio配置
 Duration _connectTimeout = const Duration(seconds: 15);
@@ -45,6 +48,20 @@ typedef NetErrorCallback = Function(int code, String msg);
 /// @weilu https://github.com/simplezhli
 class DioUtils {
   factory DioUtils() => _singleton;
+  
+  static CronetEngine? _cronetEngine;
+
+  static Future<void> initCronet() async {
+    if (Platform.isAndroid && _cronetEngine == null) {
+      try {
+        _cronetEngine = await CronetEngine.build();
+        Log.d("CronetEngine initialized successfully: ${_cronetEngine?.runtimeType}");
+        _singleton._dioInit(); // Re-initialize to apply CronetAdapter
+      } catch (e) {
+        Log.e("CronetEngine initialization failed: $e");
+      }
+    }
+  }
 
   DioUtils._() {
     _dioInit();
@@ -66,13 +83,20 @@ class DioUtils {
       //      contentType: Headers.formUrlEncodedContentType, // 适用于post form表单提交
     );
     _dio = Dio(options);
+    _streamDio = Dio(options);
 
-    ignoreSSLError ??= _ignoreSSLError;
-    if (ignoreSSLError == true) {
-      _dioIgnoreSSLError(dio);
-      _dioIgnoreSSLError(_streamDio);
+    if (Platform.isAndroid && _cronetEngine != null) {
+      _dio.httpClientAdapter = CronetAdapter(_cronetEngine!);
+      _streamDio.httpClientAdapter = CronetAdapter(_cronetEngine!);
+      Log.d("Using CronetAdapter for Dio");
     } else {
-      _streamDio.httpClientAdapter = IOHttpClientAdapter();
+      ignoreSSLError ??= _ignoreSSLError;
+      if (ignoreSSLError == true) {
+        _dioIgnoreSSLError(dio);
+        _dioIgnoreSSLError(_streamDio);
+      } else {
+        _streamDio.httpClientAdapter = IOHttpClientAdapter();
+      }
     }
 
     /// 添加拦截器
@@ -85,7 +109,7 @@ class DioUtils {
   }
 
   static final DioUtils _singleton = DioUtils._();
-  final Dio _streamDio = Dio();
+  late Dio _streamDio;
 
   static DioUtils get instance => DioUtils();
 
@@ -309,15 +333,18 @@ class DioUtils {
     onError?.call(code, msg);
   }
 
-  void _dioIgnoreSSLError(Dio dio) {
+   void _dioIgnoreSSLError(Dio dio) {
     dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
-        var client = HttpClient()..idleTimeout = const Duration(seconds: 3);
+        // Use a customized context to improve compatibility on older Android devices
+        final SecurityContext context = SecurityContext(withTrustedRoots: true);
+        final client = HttpClient(context: context)
+          ..idleTimeout = const Duration(seconds: 3);
+        
         client.badCertificateCallback = (cert, host, port) => true;
-        // client.findProxy = (uri) {
-        //   // Forward all request to proxy "localhost:8888".
-        //   return 'PROXY 192.168.11.217:8888';
-        // };
+        
+        // Some older systems might benefit from explicitly handling connections
+        // However, TLS 1.3 issues are often baked into the system's BoringSSL
         return client;
       },
       validateCertificate: (cert, host, port) {

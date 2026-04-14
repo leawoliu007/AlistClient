@@ -15,6 +15,7 @@ import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 import 'database/alist_database_controller.dart';
 import 'generated/color_schemes.g.dart';
+import 'package:alist/net/dio_utils.dart';
 
 import 'package:alist/util/audio_player_service.dart';
 import 'package:alist/util/music_scanner_service.dart';
@@ -25,6 +26,7 @@ Future<void> main() async {
   // sp初始化
   SpUtil.getInstance();
   Log.init();
+  await DioUtils.initCronet();
   runApp(const MyApp());
 }
 

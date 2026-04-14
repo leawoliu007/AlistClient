@@ -549,8 +549,37 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
           SmartDialog.showToast(Intl.loginScreen_tips_serverUrlError.tr);
           return;
         }
+        
+        if (message.contains("TLS") || message.contains("http")) {
+           _showSSLCompatibilityDialog(context, message);
+           return;
+        }
+
         SmartDialog.showToast(message);
       },
+    );
+  }
+
+  void _showSSLCompatibilityDialog(BuildContext context, String error) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("连接兼容性提示"),
+        content: Text(
+          "连接失败: $error\n\n"
+          "这通常是因为车机系统版本较低，不支持服务器强制要求的 TLS 1.3 协议导致。\n\n"
+          "建议方案：\n"
+          "1. 尝试使用 http:// 而非 https:// 访问（如果服务器支持）。\n"
+          "2. 在 Alist 服务器端（如 Nginx 配置文件）开启对 TLS 1.2 的支持。\n"
+          "3. 勾选登录页面的“忽略 SSL 报错”重试。",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("知道了"),
+          ),
+        ],
+      ),
     );
   }
 
