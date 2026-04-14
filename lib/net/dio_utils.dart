@@ -88,22 +88,16 @@ class DioUtils {
     _streamDio = Dio(options);
 
     ignoreSSLError ??= _ignoreSSLError;
-    if (ignoreSSLError == true && Platform.isAndroid) {
-      // Use our custom bridge which relies on the global SSL bypass we set in App.kt
-      _dio.httpClientAdapter = NativeHttpAdapter();
-      _streamDio.httpClientAdapter = NativeHttpAdapter();
-      Log.d("Using NativeHttpAdapter with global Java SSL bypass");
+    if (ignoreSSLError == true) {
+       _dioIgnoreSSLError(_dio);
+       _dioIgnoreSSLError(_streamDio);
+       Log.d("Using IOHttpClientAdapter with SSL bypass");
     } else if (Platform.isAndroid && _cronetEngine != null) {
       _dio.httpClientAdapter = CronetAdapter(_cronetEngine!);
       _streamDio.httpClientAdapter = CronetAdapter(_cronetEngine!);
       Log.d("Using CronetAdapter for Dio (with full TLS 1.3 support)");
     } else {
-       if (ignoreSSLError == true) {
-          _dioIgnoreSSLError(dio);
-          _dioIgnoreSSLError(_streamDio);
-       } else {
-          _streamDio.httpClientAdapter = IOHttpClientAdapter();
-       }
+      _streamDio.httpClientAdapter = IOHttpClientAdapter();
     }
 
     /// 添加拦截器
@@ -343,11 +337,11 @@ class DioUtils {
   void _dioIgnoreSSLError(Dio dio) {
     dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
-        // Use the default SecurityContext which should now be enhanced by Conscrypt
-        final client = HttpClient(context: SecurityContext.defaultContext);
+        final client = HttpClient(context: SecurityContext(withTrustedRoots: false));
         client.badCertificateCallback = (cert, host, port) => true;
         return client;
       },
+      validateCertificate: (cert, host, port) => true,
     );
   }
 }
