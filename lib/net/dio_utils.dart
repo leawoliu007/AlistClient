@@ -14,7 +14,7 @@ import 'package:get/route_manager.dart';
 
 import 'base_entity.dart';
 import 'package:cronet_http/cronet_http.dart';
-import 'package:cronet_http_adapter/cronet_http_adapter.dart';
+import 'cronet_adapter.dart';
 import 'package:dio/src/adapters/io_adapter.dart';
 
 /// 默认dio配置
