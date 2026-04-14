@@ -15,6 +15,7 @@ import 'package:get/route_manager.dart';
 import 'base_entity.dart';
 import 'package:cronet_http/cronet_http.dart';
 import 'cronet_adapter.dart';
+import 'native_http_adapter.dart';
 import 'package:dio/io.dart';
 import 'package:dio/dio.dart';
 
@@ -87,17 +88,22 @@ class DioUtils {
     _streamDio = Dio(options);
 
     ignoreSSLError ??= _ignoreSSLError;
-    if (ignoreSSLError == true) {
-      // If user wants to ignore SSL errors, use IOHttpClientAdapter which supports badCertificateCallback
-      _dioIgnoreSSLError(dio);
-      _dioIgnoreSSLError(_streamDio);
-      Log.d("Using IOHttpClientAdapter with SSL bypass");
+    if (ignoreSSLError == true && Platform.isAndroid) {
+      // Use our custom bridge which relies on the global SSL bypass we set in App.kt
+      _dio.httpClientAdapter = NativeHttpAdapter();
+      _streamDio.httpClientAdapter = NativeHttpAdapter();
+      Log.d("Using NativeHttpAdapter with global Java SSL bypass");
     } else if (Platform.isAndroid && _cronetEngine != null) {
       _dio.httpClientAdapter = CronetAdapter(_cronetEngine!);
       _streamDio.httpClientAdapter = CronetAdapter(_cronetEngine!);
       Log.d("Using CronetAdapter for Dio (with full TLS 1.3 support)");
     } else {
-      _streamDio.httpClientAdapter = IOHttpClientAdapter();
+       if (ignoreSSLError == true) {
+          _dioIgnoreSSLError(dio);
+          _dioIgnoreSSLError(_streamDio);
+       } else {
+          _streamDio.httpClientAdapter = IOHttpClientAdapter();
+       }
     }
 
     /// 添加拦截器
@@ -334,10 +340,11 @@ class DioUtils {
     onError?.call(code, msg);
   }
 
-   void _dioIgnoreSSLError(Dio dio) {
+  void _dioIgnoreSSLError(Dio dio) {
     dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
-        final client = HttpClient();
+        // Use the default SecurityContext which should now be enhanced by Conscrypt
+        final client = HttpClient(context: SecurityContext.defaultContext);
         client.badCertificateCallback = (cert, host, port) => true;
         return client;
       },

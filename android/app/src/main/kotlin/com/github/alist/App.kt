@@ -13,7 +13,27 @@ class App : FlutterApplication() {
     override fun onCreate() {
         // Insert Conscrypt at position 1 to override the system's old provider
         Security.insertProviderAt(Conscrypt.newProvider(), 1)
+        // Global SSL trust for legacy car units
+        trustAllCertificates()
         super.onCreate()
+    }
+
+    private fun trustAllCertificates() {
+        try {
+            val trustAllCerts = arrayOf<javax.net.ssl.TrustManager>(object : javax.net.ssl.X509TrustManager {
+                override fun checkClientTrusted(chain: Array<out java.security.cert.X509Certificate>?, authType: String?) {}
+                override fun checkServerTrusted(chain: Array<out java.security.cert.X509Certificate>?, authType: String?) {}
+                override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate> = arrayOf()
+            })
+
+            val sc = javax.net.ssl.SSLContext.getInstance("TLS")
+            sc.init(null, trustAllCerts, java.security.SecureRandom())
+            javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sc.socketFactory)
+            javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier { _, _ -> true }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
         val gsyOptionModelList = mutableListOf<VideoOptionModel>()
         // 丢帧解决音视频不同步的文

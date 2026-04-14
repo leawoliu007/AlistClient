@@ -16,6 +16,10 @@ class NativeHttpAdapter implements HttpClientAdapter {
     final request = http.StreamedRequest(options.method, options.uri);
     request.headers.addAll(options.headers.map((k, v) => MapEntry(k, v.toString())));
 
+    if (options.headers.containsKey('content-length')) {
+      request.contentLength = int.tryParse(options.headers['content-length'].toString());
+    }
+
     if (requestStream != null) {
       requestStream.listen(
         request.sink.add,
