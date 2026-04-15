@@ -39,7 +39,6 @@ dependencies:
   get: ^4.6.5
   # http request
   dio: ^5.1.1
-  cronet_http: ^1.0.0
   # key value
   shared_preferences: ^2.1.0
   flustars: ^2.0.1

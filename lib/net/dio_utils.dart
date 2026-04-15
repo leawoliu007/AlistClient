@@ -13,11 +13,6 @@ import 'package:flutter/foundation.dart';
 import 'package:get/route_manager.dart';
 
 import 'base_entity.dart';
-import 'package:cronet_http/cronet_http.dart';
-import 'cronet_adapter.dart';
-import 'native_http_adapter.dart';
-import 'package:dio/io.dart';
-import 'package:dio/dio.dart';
 
 /// 默认dio配置
 Duration _connectTimeout = const Duration(seconds: 15);
@@ -51,32 +46,8 @@ typedef NetErrorCallback = Function(int code, String msg);
 class DioUtils {
   factory DioUtils() => _singleton;
   
-  static CronetEngine? _cronetEngine;
-  static CronetEngine? _insecureCronetEngine;
-
-  static Future<void> initCronet() async {
-    if (Platform.isAndroid && _cronetEngine == null) {
-      try {
-        _cronetEngine = await CronetEngine.build();
-        Log.d("CronetEngine initialized: ${_cronetEngine?.runtimeType}");
-      } catch (e) {
-        Log.e("CronetEngine init failed: $e");
-      }
-    }
-    if (Platform.isAndroid && _insecureCronetEngine == null) {
-      try {
-        _insecureCronetEngine = await CronetEngine.build(
-          userAgent: "AlistClient",
-          enableHttp2: true,
-          enableBrotli: true,
-        );
-        Log.d("InsecureCronetEngine initialized");
-      } catch (e) {
-        Log.e("InsecureCronetEngine init failed: $e");
-      }
-    }
-    _singleton._dioInit();
-  }
+  // No-op: Cronet removed. Flutter's BoringSSL handles TLS 1.3 natively.
+  static Future<void> initCronet() async {}
 
   DioUtils._() {
     _dioInit();
@@ -87,38 +58,20 @@ class DioUtils {
       connectTimeout: _connectTimeout,
       receiveTimeout: _receiveTimeout,
       sendTimeout: _sendTimeout,
-
-      /// dio默认json解析，这里指定返回UTF8字符串，自己处理解析。（可也以自定义Transformer实现）
       responseType: ResponseType.plain,
-      validateStatus: (_) {
-        // 不使用http状态码判断状态，使用AdapterInterceptor来处理（适用于标准REST风格）
-        return true;
-      },
+      validateStatus: (_) => true,
       baseUrl: _baseUrl,
-      //      contentType: Headers.formUrlEncodedContentType, // 适用于post form表单提交
     );
     _dio = Dio(options);
     _streamDio = Dio(options);
 
     ignoreSSLError ??= _ignoreSSLError;
-    if (ignoreSSLError == true && Platform.isAndroid) {
-      // Use Cronet with insecure engine to bypass SSL cert errors
-      final engine = _insecureCronetEngine ?? _cronetEngine;
-      if (engine != null) {
-        _dio.httpClientAdapter = CronetAdapter(engine);
-        _streamDio.httpClientAdapter = CronetAdapter(engine);
-        Log.d("Using CronetAdapter (insecure mode)");
-      } else {
-        // Last resort: dart:io with full bypass
-        _dioIgnoreSSLError(_dio);
-        _dioIgnoreSSLError(_streamDio);
-        Log.d("Using IOHttpClientAdapter SSL bypass (Cronet unavailable)");
-      }
-    } else if (Platform.isAndroid && _cronetEngine != null) {
-      _dio.httpClientAdapter = CronetAdapter(_cronetEngine!);
-      _streamDio.httpClientAdapter = CronetAdapter(_cronetEngine!);
-      Log.d("Using CronetAdapter (secure mode)");
+    if (ignoreSSLError == true) {
+      _dioIgnoreSSLError(_dio);
+      _dioIgnoreSSLError(_streamDio);
+      Log.d("Using IOHttpClientAdapter with SSL bypass");
     } else {
+      _dio.httpClientAdapter = IOHttpClientAdapter();
       _streamDio.httpClientAdapter = IOHttpClientAdapter();
     }
 
