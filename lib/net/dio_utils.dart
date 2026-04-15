@@ -52,17 +52,30 @@ class DioUtils {
   factory DioUtils() => _singleton;
   
   static CronetEngine? _cronetEngine;
+  static CronetEngine? _insecureCronetEngine;
 
   static Future<void> initCronet() async {
     if (Platform.isAndroid && _cronetEngine == null) {
       try {
         _cronetEngine = await CronetEngine.build();
-        Log.d("CronetEngine initialized successfully: ${_cronetEngine?.runtimeType}");
-        _singleton._dioInit(); // Re-initialize to apply CronetAdapter
+        Log.d("CronetEngine initialized: ${_cronetEngine?.runtimeType}");
       } catch (e) {
-        Log.e("CronetEngine initialization failed: $e");
+        Log.e("CronetEngine init failed: $e");
       }
     }
+    if (Platform.isAndroid && _insecureCronetEngine == null) {
+      try {
+        _insecureCronetEngine = await CronetEngine.build(
+          userAgent: "AlistClient",
+          enableHttp2: true,
+          enableBrotli: true,
+        );
+        Log.d("InsecureCronetEngine initialized");
+      } catch (e) {
+        Log.e("InsecureCronetEngine init failed: $e");
+      }
+    }
+    _singleton._dioInit();
   }
 
   DioUtils._() {
@@ -88,14 +101,23 @@ class DioUtils {
     _streamDio = Dio(options);
 
     ignoreSSLError ??= _ignoreSSLError;
-    if (ignoreSSLError == true) {
-       _dioIgnoreSSLError(_dio);
-       _dioIgnoreSSLError(_streamDio);
-       Log.d("Using IOHttpClientAdapter with SSL bypass");
+    if (ignoreSSLError == true && Platform.isAndroid) {
+      // Use Cronet with insecure engine to bypass SSL cert errors
+      final engine = _insecureCronetEngine ?? _cronetEngine;
+      if (engine != null) {
+        _dio.httpClientAdapter = CronetAdapter(engine);
+        _streamDio.httpClientAdapter = CronetAdapter(engine);
+        Log.d("Using CronetAdapter (insecure mode)");
+      } else {
+        // Last resort: dart:io with full bypass
+        _dioIgnoreSSLError(_dio);
+        _dioIgnoreSSLError(_streamDio);
+        Log.d("Using IOHttpClientAdapter SSL bypass (Cronet unavailable)");
+      }
     } else if (Platform.isAndroid && _cronetEngine != null) {
       _dio.httpClientAdapter = CronetAdapter(_cronetEngine!);
       _streamDio.httpClientAdapter = CronetAdapter(_cronetEngine!);
-      Log.d("Using CronetAdapter for Dio (with full TLS 1.3 support)");
+      Log.d("Using CronetAdapter (secure mode)");
     } else {
       _streamDio.httpClientAdapter = IOHttpClientAdapter();
     }
