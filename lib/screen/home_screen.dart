@@ -62,13 +62,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        bool isTablet = constraints.maxWidth >= 600;
+        bool isTablet = constraints.maxWidth >= 600 || Global.isCarMode.value;
+        bool isCarOrUltraWide = constraints.maxWidth >= 900 || Global.isCarMode.value;
 
         if (isTablet) {
           return Scaffold(
             body: Row(
               children: [
                 NavigationRail(
+                  extended: isCarOrUltraWide,
+                  minWidth: 88,
+                  minExtendedWidth: 200,
+                  unselectedLabelTextStyle: const TextStyle(fontSize: 16),
+                  selectedLabelTextStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  selectedIconTheme: const IconThemeData(size: 32),
+                  unselectedIconTheme: const IconThemeData(size: 32),
                   selectedIndex: _currentPage,
                   onDestinationSelected: (int idx) {
                     if (idx == 0 && _currentPage == 0) {
@@ -78,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       _pageController.jumpToPage(idx);
                     }
                   },
-                  labelType: NavigationRailLabelType.all,
+                  labelType: isCarOrUltraWide ? NavigationRailLabelType.none : NavigationRailLabelType.all,
                   destinations: [
                     NavigationRailDestination(
                       icon: const Icon(Icons.folder_rounded),

@@ -16,7 +16,8 @@ import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'database/alist_database_controller.dart';
 import 'generated/color_schemes.g.dart';
 import 'package:alist/net/dio_utils.dart';
-
+import 'package:alist/util/constant.dart';
+import 'package:alist/util/global.dart';
 import 'package:alist/util/audio_player_service.dart';
 import 'package:alist/util/music_scanner_service.dart';
 
@@ -24,7 +25,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // sp初始化
-  SpUtil.getInstance();
+  await SpUtil.getInstance();
+  Global.isCarMode.value = SpUtil.getBool(AlistConstant.isCarMode, defValue: false) ?? false;
   Log.init();
   await DioUtils.initCronet();
   runApp(const MyApp());

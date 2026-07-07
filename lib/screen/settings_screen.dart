@@ -77,8 +77,22 @@ class _SettingsContainerState extends State<_SettingsContainer>
     );
   }
 
-  ListTile _buildListItem(
+  Widget _buildListItem(
       SettingsMenu settingsMenu, BuildContext context, bool isDarkMode) {
+    if (settingsMenu.menuId == MenuId.carMode) {
+      return Obx(() => SwitchListTile(
+            title: Text(settingsMenu.name),
+            secondary: Image.asset(settingsMenu.icon),
+            value: Global.isCarMode.value,
+            onChanged: (value) {
+              Global.isCarMode.value = value;
+              SpUtil.putBool(AlistConstant.isCarMode, value);
+            },
+            tileColor: Theme.of(context).colorScheme.background.withAlpha(125),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+          ));
+    }
+
     return ListTile(
       onTap: () {
         switch (settingsMenu.menuId) {
@@ -124,6 +138,8 @@ class _SettingsContainerState extends State<_SettingsContainer>
               arguments: {"url": url, "title": Intl.screenName_about.tr},
             );
             break;
+          default:
+            break;
         }
       },
       horizontalTitleGap: 2,
@@ -159,6 +175,11 @@ class _SettingsContainerState extends State<_SettingsContainer>
           name: Intl.settingsScreen_item_videoPlayer.tr,
           icon: Images.settingsScreenPlayer,
           route: NamedRouter.playerSettings),
+      SettingsMenu(
+          menuId: MenuId.carMode,
+          name: "车机大屏模式 / Car UI",
+          icon: Images.settingsScreenPlayer,
+      ),
       SettingsMenu(
           menuId: MenuId.privacyPolicy,
           name: Intl.settingsScreen_item_privacyPolicy.tr,
@@ -230,5 +251,6 @@ enum MenuId {
   privacyPolicy,
   about,
   cacheManager,
-  playerSettings
+  playerSettings,
+  carMode
 }

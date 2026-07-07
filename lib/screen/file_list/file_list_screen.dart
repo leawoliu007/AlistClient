@@ -33,6 +33,7 @@ import 'package:alist/util/music_scanner_service.dart';
 import 'package:alist/util/file_password_helper.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
+import 'package:alist/util/global.dart';
 import 'package:alist/util/focus_node_utils.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/markdown_utils.dart';
@@ -1130,14 +1131,11 @@ class _FileListView extends StatelessWidget {
       itemCount++;
     }
 
-    return SmartRefresher(
-      controller: refreshController,
-      onRefresh: refreshCallback,
-      child: ListView.separated(
-        itemCount: itemCount,
-        separatorBuilder: (context, index) => const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 18), child: Divider()),
-        itemBuilder: (context, index) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        bool isTablet = constraints.maxWidth >= 600 || Global.isCarMode.value;
+
+        Widget buildItem(BuildContext context, int index) {
           if (index == files.length) {
             // it's readme
             return FileListItemView(
@@ -1199,8 +1197,33 @@ class _FileListView extends StatelessWidget {
               ),
             );
           }
-        },
-      ),
+        }
+
+        Widget listViewWidget = isTablet 
+            ? GridView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 400,
+                  mainAxisExtent: 88,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                ),
+                itemBuilder: buildItem,
+                itemCount: itemCount,
+              )
+            : ListView.separated(
+                itemCount: itemCount,
+                separatorBuilder: (context, index) => const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 18), child: Divider()),
+                itemBuilder: buildItem,
+              );
+
+        return SmartRefresher(
+          controller: refreshController,
+          onRefresh: refreshCallback,
+          child: listViewWidget,
+        );
+      },
     );
   }
 

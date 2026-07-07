@@ -18,6 +18,7 @@ import 'package:alist/util/download/download_manager.dart';
 import 'package:alist/util/file_password_helper.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
+import 'package:alist/util/global.dart';
 import 'package:alist/util/markdown_utils.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:alist/util/nature_sort.dart';
@@ -95,7 +96,7 @@ class _RecentsScreenState extends State<RecentsScreen>
   Widget _fileListView() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        bool isTablet = constraints.maxWidth >= 600;
+        bool isTablet = constraints.maxWidth >= 600 || Global.isCarMode.value;
 
         Widget buildItem(BuildContext context, int index) {
           var record = _list[index];

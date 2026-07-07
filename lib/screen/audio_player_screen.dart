@@ -8,6 +8,7 @@ import 'package:alist/widget/slider.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
+import 'package:alist/util/global.dart';
 
 class AudioPlayerScreen extends StatefulWidget {
   AudioPlayerScreen({Key? key}) : super(key: key);
@@ -36,6 +37,8 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    bool isCarOrUltraWide = MediaQuery.of(context).size.width >= 900 || Global.isCarMode.value;
+
     return AlistScaffold(
       appbarTitle: const SizedBox(),
       body: Center(
@@ -43,16 +46,21 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
-              padding: const EdgeInsets.only(left: 30, right: 30, bottom: 10),
-              child: Obx(() => Text(controller.name.value)),
+              padding: const EdgeInsets.only(left: 30, right: 30, bottom: 30),
+              child: Obx(() => Text(
+                controller.name.value,
+                style: TextStyle(fontSize: isCarOrUltraWide ? 36 : 18, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              )),
             ),
             Container(
               width: double.infinity,
-              height: 30,
+              height: isCarOrUltraWide ? 50 : 30,
               padding: const EdgeInsets.symmetric(horizontal: 30),
-              child: Obx(() => _buildFijkSlider(controller)),
+              child: Obx(() => _buildFijkSlider(controller, isCarOrUltraWide)),
             ),
-            _buildButtons(controller, context),
+            const SizedBox(height: 20),
+            _buildButtons(controller, context, isCarOrUltraWide),
           ],
         ),
       ),
@@ -60,14 +68,15 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   }
 
   Row _buildButtons(
-      AudioPlayerService controller, BuildContext context) {
+      AudioPlayerService controller, BuildContext context, bool isCarOrUltraWide) {
+    double scale = isCarOrUltraWide ? 1.5 : 1.0;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Padding(
           padding: const EdgeInsets.all(5.0),
           child: IconButton(
-            iconSize: 40,
+            iconSize: 40 * scale,
             icon: Obx(() {
               if (controller.playMode.value == PlayMode.list) {
                 return const Icon(Icons.repeat);
@@ -83,7 +92,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
           ),
         ),
         Obx(() => IconButton(
-              iconSize: 50,
+              iconSize: 50 * scale,
               icon: const Icon(Icons.skip_previous),
               onPressed: controller.playMode.value == PlayMode.single ||
                       controller.audios.length <= 1
@@ -96,10 +105,11 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
           () => _PlayButton(
             playing: controller.playing.value,
             onPressed: controller.playOrPause,
+            scale: scale,
           ),
         ),
         Obx(() => IconButton(
-              iconSize: 50,
+              iconSize: 50 * scale,
               icon: const Icon(Icons.skip_next),
               onPressed: controller.playMode.value == PlayMode.single ||
                       controller.audios.length <= 1
@@ -109,7 +119,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                     },
             )),
         IconButton(
-          iconSize: 50,
+          iconSize: 50 * scale,
           icon: const Icon(Icons.playlist_play_rounded),
           onPressed: () {
             _showPlayerList(context, controller);
@@ -119,7 +129,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
     );
   }
 
-  Widget _buildFijkSlider(AudioPlayerService controller) {
+  Widget _buildFijkSlider(AudioPlayerService controller, bool isCarOrUltraWide) {
     if (!controller.prepared.value) {
       return const SizedBox();
     }
@@ -153,9 +163,9 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
           _duration2String(controller.seekPos.value > 0
               ? Duration(milliseconds: controller.seekPos.value.toInt())
               : controller.currentPos.value),
-          style: const TextStyle(
-            fontSize: 12,
-            fontFeatures: [FontFeature.tabularFigures()],
+          style: TextStyle(
+            fontSize: isCarOrUltraWide ? 18 : 12,
+            fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
         Expanded(
@@ -165,9 +175,9 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
         )),
         Text(
           _duration2String(controller.duration.value),
-          style: const TextStyle(
-            fontSize: 12,
-            fontFeatures: [FontFeature.tabularFigures()],
+          style: TextStyle(
+            fontSize: isCarOrUltraWide ? 18 : 12,
+            fontFeatures: const [FontFeature.tabularFigures()],
           ),
         )
       ],
@@ -263,15 +273,16 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
 }
 
 class _PlayButton extends StatelessWidget {
-  const _PlayButton({Key? key, required this.playing, required this.onPressed})
+  const _PlayButton({Key? key, required this.playing, required this.onPressed, this.scale = 1.0})
       : super(key: key);
   final VoidCallback onPressed;
   final bool playing;
+  final double scale;
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      iconSize: 50,
+      iconSize: 50 * scale,
       icon: Icon(playing ? Icons.pause : Icons.play_arrow),
       padding: const EdgeInsets.only(left: 10.0, right: 10.0),
       onPressed: onPressed,

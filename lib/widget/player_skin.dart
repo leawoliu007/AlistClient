@@ -16,6 +16,7 @@ import 'package:get/get.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:wakelock/wakelock.dart';
+import 'package:alist/util/global.dart';
 
 typedef OnPlayProgressChange = Function(int currentPostion, int duration);
 typedef PlayNextCallback = Function();
@@ -130,7 +131,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   List<AVPTrackInfo>? _audioTracks;
   int _audioTrackIndex = 0;
 
-  final barHeight = 40.0;
+  double get barHeight => (_screenWidth >= 900 || Global.isCarMode.value) ? 60.0 : 40.0;
 
   void _readIfIpad() async {
     final iosInfo = await DeviceInfoPlugin().iosInfo;
@@ -358,6 +359,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
       iconData = Icons.volume_up;
     }
     return IconButton(
+      iconSize: (_screenWidth >= 900 || Global.isCarMode.value) ? 32 : 24,
       icon: Icon(iconData, color: Colors.white),
       padding: const EdgeInsets.only(left: 10.0, right: 10.0),
       onPressed: () {
@@ -398,7 +400,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
                     child: Text(
                       _duration2String(_currentPos),
                       style:
-                          const TextStyle(fontSize: 14.0, color: Colors.white),
+                          TextStyle(fontSize: (_screenWidth >= 900 || Global.isCarMode.value) ? 18.0 : 14.0, color: Colors.white),
                     ),
                   )
                 : const SizedBox(),
@@ -443,7 +445,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
               IconButton(
                 icon: Text(
                   Intl.playerSkin_audioTrack.tr,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: Colors.white, fontSize: (_screenWidth >= 900 || Global.isCarMode.value) ? 18 : 14),
                 ),
                 onPressed: () {
                   if (_locked) {
@@ -507,11 +509,12 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
               },
               icon: Text(
                 _rateStr,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: Colors.white, fontSize: (_screenWidth >= 900 || Global.isCarMode.value) ? 18 : 14),
               ),
             ),
 
             IconButton(
+              iconSize: (_screenWidth >= 900 || Global.isCarMode.value) ? 32 : 24,
               icon: Icon(
                 _fullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
                 color: Colors.white,
@@ -1039,13 +1042,16 @@ class _DurationTextWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    bool isCarOrUltraWide = (MediaQuery.of(context).size.width >= 900 || Global.isCarMode.value);
+    double fontSize = isCarOrUltraWide ? 18.0 : 14.0;
+
     if (!prepared) {
       return const SizedBox();
     } else if (duration.inMilliseconds == 0) {
-      return const Text(
+      return Text(
         "LIVE",
         style: TextStyle(
-          fontSize: 14.0,
+          fontSize: fontSize,
           color: Colors.white,
         ),
       );
@@ -1054,8 +1060,8 @@ class _DurationTextWidget extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 5.0),
           child: Text(
             _duration2String(duration),
-            style: const TextStyle(
-              fontSize: 14.0,
+            style: TextStyle(
+              fontSize: fontSize,
               color: Colors.white,
             ),
           ));

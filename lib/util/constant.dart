@@ -35,4 +35,5 @@ class AlistConstant {
   static const String playerType = 'playerType';
 
   static const String locale = 'locale';
+  static const String isCarMode = 'isCarMode';
 }
