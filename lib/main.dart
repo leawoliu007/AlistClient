@@ -82,20 +82,35 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: darkColorScheme,
         focusColor: Colors.white.withOpacity(0.15),
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        cardTheme: CardTheme(
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          color: const Color(0xFF1E1E1E),
+        ),
+        listTileTheme: ListTileThemeData(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        ),
         dividerTheme: DividerTheme.of(context).copyWith(
           thickness: 0,
           space: 0,
+          color: Colors.white.withOpacity(0.05),
         ),
         appBarTheme: AppBarTheme.of(context).copyWith(
+          backgroundColor: const Color(0xFF121212).withOpacity(0.95),
+          elevation: 0,
+          scrolledUnderElevation: 0,
           titleTextStyle: const TextStyle(
             color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
           ),
           systemOverlayStyle: const SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
             statusBarIconBrightness: Brightness.light,
-            systemNavigationBarColor: Color(0xFF1A1C1E),
+            systemNavigationBarColor: Color(0xFF121212),
             systemNavigationBarIconBrightness: Brightness.light,
           ),
         ));
@@ -107,20 +122,35 @@ class MyApp extends StatelessWidget {
       hintColor: const Color(0xFFBBBBBB),
       colorScheme: lightColorScheme,
       focusColor: Colors.black.withOpacity(0.12),
+      scaffoldBackgroundColor: const Color(0xFFF7F7F9),
+      cardTheme: CardTheme(
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        color: Colors.white,
+      ),
+      listTileTheme: ListTileThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      ),
       dividerTheme: DividerTheme.of(context).copyWith(
         thickness: 0,
         space: 0,
+        color: Colors.black.withOpacity(0.05),
       ),
       appBarTheme: AppBarTheme.of(context).copyWith(
+        backgroundColor: const Color(0xFFF7F7F9).withOpacity(0.95),
+        elevation: 0,
+        scrolledUnderElevation: 0,
         titleTextStyle: const TextStyle(
-          color: Colors.black,
-          fontSize: 18,
-          fontWeight: FontWeight.w500,
+          color: Colors.black87,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
         ),
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.dark,
-          systemNavigationBarColor: Colors.white,
+          systemNavigationBarColor: Color(0xFFF7F7F9),
           systemNavigationBarIconBrightness: Brightness.dark,
         ),
       ),

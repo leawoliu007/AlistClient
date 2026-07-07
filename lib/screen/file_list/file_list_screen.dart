@@ -1213,8 +1213,7 @@ class _FileListView extends StatelessWidget {
               )
             : ListView.separated(
                 itemCount: itemCount,
-                separatorBuilder: (context, index) => const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 18), child: Divider()),
+                separatorBuilder: (context, index) => const SizedBox(height: 8),
                 itemBuilder: buildItem,
               );
 

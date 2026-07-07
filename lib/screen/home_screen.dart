@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'dart:ui';
 
 import 'package:alist/entity/app_version_resp.dart';
 import 'package:alist/l10n/intl_keys.dart';
@@ -119,41 +120,60 @@ class _HomeScreenState extends State<HomeScreen> {
 
         return Scaffold(
           body: pageView,
-          bottomNavigationBar: AlistBottomNavigationBar(
-            items: <BottomNavigationBarItem>[
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.folder_rounded),
-                label: Intl.screenName_home.tr,
+          bottomNavigationBar: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.background.withOpacity(0.85),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -4),
+                )
+              ]
+            ),
+            child: ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: AlistBottomNavigationBar(
+                  elevation: 0,
+                  backgroundColor: Colors.transparent,
+                  items: <BottomNavigationBarItem>[
+                    BottomNavigationBarItem(
+                      icon: const Icon(Icons.folder_rounded),
+                      label: Intl.screenName_home.tr,
+                    ),
+                    BottomNavigationBarItem(
+                      icon: const Icon(Icons.timelapse_rounded),
+                      label: Intl.screenName_recents.tr,
+                    ),
+                    BottomNavigationBarItem(
+                      icon: const Icon(Icons.star_rounded),
+                      label: Intl.screenName_favorite.tr,
+                    ),
+                    const BottomNavigationBarItem(
+                      icon: Icon(Icons.library_music_rounded),
+                      label: "Music",
+                    ),
+                    BottomNavigationBarItem(
+                      icon: const Icon(Icons.settings_rounded),
+                      label: Intl.screenName_settings.tr,
+                    )
+                  ],
+                  currentIndex: _currentPage,
+                  type: BottomNavigationBarType.fixed,
+                  onTap: (int idx) => _pageController.jumpToPage(idx),
+                  onLongPress: (int idx) {
+                    LogUtil.d("onDoubleTap: $idx");
+                    if (idx == 0 && _currentPage == 0) {
+                      Get.until((route) => route.isFirst,
+                          id: AlistRouter.fileListRouterStackId);
+                    } else {
+                      _pageController.jumpToPage(idx);
+                    }
+                  },
+                ),
               ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.timelapse_rounded),
-                label: Intl.screenName_recents.tr,
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.star_rounded),
-                label: Intl.screenName_favorite.tr,
-              ),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.library_music_rounded),
-                label: "Music",
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.settings_rounded),
-                label: Intl.screenName_settings.tr,
-              )
-            ],
-            currentIndex: _currentPage,
-            type: BottomNavigationBarType.fixed,
-            onTap: (int idx) => _pageController.jumpToPage(idx),
-            onLongPress: (int idx) {
-              LogUtil.d("onDoubleTap: $idx");
-              if (idx == 0 && _currentPage == 0) {
-                Get.until((route) => route.isFirst,
-                    id: AlistRouter.fileListRouterStackId);
-              } else {
-                _pageController.jumpToPage(idx);
-              }
-            },
+            ),
           ),
         );
       },

@@ -93,11 +93,11 @@ class FileListItemView extends StatelessWidget {
           children: [
             Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(12),
                 color: Get.theme.colorScheme.primaryContainer,
               ),
-              width: 24,
-              height: 12,
+              width: 32,
+              height: 32,
             ),
             const Icon(Icons.more_horiz_rounded),
           ],
@@ -106,20 +106,32 @@ class FileListItemView extends StatelessWidget {
     }
   }
 
-  ClipRRect _buildThumbnailView(String icon, String thumbnail) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.all(Radius.circular(4)),
-      child: ExtendedImage.network(
-        thumbnail,
-        fit: BoxFit.cover,
-        width: 35,
-        height: 35,
-        loadStateChanged: (state) {
-          if (state.extendedImageLoadState == LoadState.failed) {
-            return Image.asset(icon);
-          }
-          return null;
-        },
+  Container _buildThumbnailView(String icon, String thumbnail) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          )
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: ExtendedImage.network(
+          thumbnail,
+          fit: BoxFit.cover,
+          width: 40,
+          height: 40,
+          loadStateChanged: (state) {
+            if (state.extendedImageLoadState == LoadState.failed) {
+              return Image.asset(icon);
+            }
+            return null;
+          },
+        ),
       ),
     );
   }

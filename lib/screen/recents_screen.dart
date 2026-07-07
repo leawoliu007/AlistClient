@@ -117,7 +117,7 @@ class _RecentsScreenState extends State<RecentsScreen>
               )
             : ListView.separated(
                 itemBuilder: buildItem,
-                separatorBuilder: (context, index) => const Divider(),
+                separatorBuilder: (context, index) => const SizedBox(height: 8),
                 itemCount: _list.length,
               );
 
