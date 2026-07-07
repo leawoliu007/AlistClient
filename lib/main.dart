@@ -26,8 +26,14 @@ Future<void> main() async {
   
   // sp初始化
   await SpUtil.getInstance();
-  Global.isCarMode.value = SpUtil.getBool(AlistConstant.isCarMode, defValue: false) ?? false;
-  Global.isTvMode.value = SpUtil.getBool(AlistConstant.isTvMode, defValue: false) ?? false;
+  
+  // 从编译环境读取 DEVICE_MODE (--dart-define=DEVICE_MODE=tv/car)
+  const String deviceMode = String.fromEnvironment('DEVICE_MODE', defaultValue: 'phone');
+  bool defaultCarMode = (deviceMode == 'car');
+  bool defaultTvMode = (deviceMode == 'tv');
+  
+  Global.isCarMode.value = SpUtil.getBool(AlistConstant.isCarMode, defValue: defaultCarMode) ?? defaultCarMode;
+  Global.isTvMode.value = SpUtil.getBool(AlistConstant.isTvMode, defValue: defaultTvMode) ?? defaultTvMode;
   Log.init();
   await DioUtils.initCronet();
   runApp(const MyApp());

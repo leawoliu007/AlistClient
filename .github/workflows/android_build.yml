@@ -35,17 +35,29 @@ jobs:
     - name: Build Runner (Code Generation)
       run: flutter pub run build_runner build --delete-conflicting-outputs
 
-    - name: Build APK (Release)
+    - name: Build Mobile APK (Release)
       run: flutter build apk --release
 
-    - name: Rename APK
-      run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/AlistClientNow-release.apk
+    - name: Rename Mobile APK
+      run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/AlistClientNow-Mobile-release.apk
 
-    - name: Upload APK
+    - name: Build TV APK (Release)
+      run: flutter build apk --release --dart-define=DEVICE_MODE=tv
+
+    - name: Rename TV APK
+      run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/AlistClientNow-TV-release.apk
+
+    - name: Build Car APK (Release)
+      run: flutter build apk --release --dart-define=DEVICE_MODE=car
+
+    - name: Rename Car APK
+      run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/AlistClientNow-Car-release.apk
+
+    - name: Upload APKs
       uses: actions/upload-artifact@v4
       with:
-        name: app-release
-        path: build/app/outputs/flutter-apk/AlistClientNow-release.apk
+        name: app-release-apks
+        path: build/app/outputs/flutter-apk/AlistClientNow-*-release.apk
 
     - name: Publish to GitHub Releases
       if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
@@ -53,5 +65,5 @@ jobs:
       with:
         tag_name: "v1.0.${{ github.run_number }}"
         name: "Automated Build v1.0.${{ github.run_number }}"
-        files: build/app/outputs/flutter-apk/AlistClientNow-release.apk
+        files: build/app/outputs/flutter-apk/AlistClientNow-*-release.apk
         generate_release_notes: true
