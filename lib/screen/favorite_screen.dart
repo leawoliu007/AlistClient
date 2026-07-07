@@ -93,15 +93,37 @@ class _FavoriteScreenState extends State<FavoriteScreen>
   }
 
   Widget _fileListView() {
-    return SlidableAutoCloseBehavior(
-      child: ListView.separated(
-        itemBuilder: (context, item) {
-          var record = _list[item];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        bool isTablet = constraints.maxWidth >= 600;
+
+        Widget buildItem(BuildContext context, int index) {
+          var record = _list[index];
           return _fileListItemView(context, record);
-        },
-        separatorBuilder: (context, item) => const Divider(),
-        itemCount: _list.length,
-      ),
+        }
+
+        Widget listViewWidget = isTablet 
+            ? GridView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 400,
+                  mainAxisExtent: 88,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                ),
+                itemCount: _list.length,
+                itemBuilder: buildItem,
+              )
+            : ListView.separated(
+                itemBuilder: buildItem,
+                separatorBuilder: (context, index) => const Divider(),
+                itemCount: _list.length,
+              );
+
+        return SlidableAutoCloseBehavior(
+          child: listViewWidget,
+        );
+      },
     );
   }
 

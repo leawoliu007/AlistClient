@@ -46,56 +46,109 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(),
-        children: <Widget>[
-          FileListNavigator(
-            isInFileListStack: _currentPage == 0,
+    Widget pageView = PageView(
+      controller: _pageController,
+      physics: const NeverScrollableScrollPhysics(),
+      children: <Widget>[
+        FileListNavigator(
+          isInFileListStack: _currentPage == 0,
+        ),
+        const RecentsScreen(),
+        const FavoriteScreen(),
+        const MusicLibraryScreen(),
+        const SettingsScreen(),
+      ],
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        bool isTablet = constraints.maxWidth >= 600;
+
+        if (isTablet) {
+          return Scaffold(
+            body: Row(
+              children: [
+                NavigationRail(
+                  selectedIndex: _currentPage,
+                  onDestinationSelected: (int idx) {
+                    if (idx == 0 && _currentPage == 0) {
+                      Get.until((route) => route.isFirst,
+                          id: AlistRouter.fileListRouterStackId);
+                    } else {
+                      _pageController.jumpToPage(idx);
+                    }
+                  },
+                  labelType: NavigationRailLabelType.all,
+                  destinations: [
+                    NavigationRailDestination(
+                      icon: const Icon(Icons.folder_rounded),
+                      label: Text(Intl.screenName_home.tr),
+                    ),
+                    NavigationRailDestination(
+                      icon: const Icon(Icons.timelapse_rounded),
+                      label: Text(Intl.screenName_recents.tr),
+                    ),
+                    NavigationRailDestination(
+                      icon: const Icon(Icons.star_rounded),
+                      label: Text(Intl.screenName_favorite.tr),
+                    ),
+                    const NavigationRailDestination(
+                      icon: Icon(Icons.library_music_rounded),
+                      label: Text("Music"),
+                    ),
+                    NavigationRailDestination(
+                      icon: const Icon(Icons.settings_rounded),
+                      label: Text(Intl.screenName_settings.tr),
+                    ),
+                  ],
+                ),
+                const VerticalDivider(thickness: 1, width: 1),
+                Expanded(child: pageView),
+              ],
+            ),
+          );
+        }
+
+        return Scaffold(
+          body: pageView,
+          bottomNavigationBar: AlistBottomNavigationBar(
+            items: <BottomNavigationBarItem>[
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.folder_rounded),
+                label: Intl.screenName_home.tr,
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.timelapse_rounded),
+                label: Intl.screenName_recents.tr,
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.star_rounded),
+                label: Intl.screenName_favorite.tr,
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.library_music_rounded),
+                label: "Music",
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.settings_rounded),
+                label: Intl.screenName_settings.tr,
+              )
+            ],
+            currentIndex: _currentPage,
+            type: BottomNavigationBarType.fixed,
+            onTap: (int idx) => _pageController.jumpToPage(idx),
+            onLongPress: (int idx) {
+              LogUtil.d("onDoubleTap: $idx");
+              if (idx == 0 && _currentPage == 0) {
+                Get.until((route) => route.isFirst,
+                    id: AlistRouter.fileListRouterStackId);
+              } else {
+                _pageController.jumpToPage(idx);
+              }
+            },
           ),
-          const RecentsScreen(),
-          const FavoriteScreen(),
-          const MusicLibraryScreen(),
-          const SettingsScreen(),
-        ],
-      ),
-      bottomNavigationBar: AlistBottomNavigationBar(
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.folder_rounded),
-            label: Intl.screenName_home.tr,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.timelapse_rounded),
-            label: Intl.screenName_recents.tr,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.star_rounded),
-            label: Intl.screenName_favorite.tr,
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.library_music_rounded),
-            label: "Music",
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.settings_rounded),
-            label: Intl.screenName_settings.tr,
-          )
-        ],
-        currentIndex: _currentPage,
-        type: BottomNavigationBarType.fixed,
-        onTap: (int idx) => _pageController.jumpToPage(idx),
-        onLongPress: (int idx) {
-          LogUtil.d("onDoubleTap: $idx");
-          if (idx == 0 && _currentPage == 0) {
-            Get.until((route) => route.isFirst,
-                id: AlistRouter.fileListRouterStackId);
-          } else {
-            _pageController.jumpToPage(idx);
-          }
-        },
-      ),
+        );
+      },
     );
   }
 

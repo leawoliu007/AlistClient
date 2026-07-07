@@ -111,25 +111,50 @@ class FileSearchScreen extends StatelessWidget {
   }
 
   Obx _buildList(FileSearchController controller) {
-    return Obx(() => ListView.separated(
-        itemBuilder: (context, index) {
-          var item = controller.list[index];
-          var isDir = item.isDir ?? false;
-          var sizeDesc = isDir ? null : FileUtils.formatBytes(item.size ?? 0);
-          return FileListItemView(
-            icon: FileUtils.getFileIcon(isDir, item.name ?? ""),
-            fileName: item.name ?? "",
-            time: item.parent,
-            sizeDesc: sizeDesc,
-            thumbnail: null,
-            fileNameMaxLines: 100,
-            onTap: () {
-              controller.onFileTap(context, index);
-            },
+    return Obx(() {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          bool isTablet = constraints.maxWidth >= 600;
+          
+          Widget buildItem(BuildContext context, int index) {
+            var item = controller.list[index];
+            var isDir = item.isDir ?? false;
+            var sizeDesc = isDir ? null : FileUtils.formatBytes(item.size ?? 0);
+            return FileListItemView(
+              icon: FileUtils.getFileIcon(isDir, item.name ?? ""),
+              fileName: item.name ?? "",
+              time: item.parent,
+              sizeDesc: sizeDesc,
+              thumbnail: null,
+              fileNameMaxLines: 100,
+              onTap: () {
+                controller.onFileTap(context, index);
+              },
+            );
+          }
+
+          if (isTablet) {
+            return GridView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 400,
+                mainAxisExtent: 88,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+              ),
+              itemCount: controller.list.length,
+              itemBuilder: buildItem,
+            );
+          }
+
+          return ListView.separated(
+            itemBuilder: buildItem,
+            separatorBuilder: (context, index) => const Divider(),
+            itemCount: controller.list.length,
           );
         },
-        separatorBuilder: (context, index) => const Divider(),
-        itemCount: controller.list.length));
+      );
+    });
   }
 }
 
