@@ -96,7 +96,7 @@ class _FavoriteScreenState extends State<FavoriteScreen>
   Widget _fileListView() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        bool isTablet = constraints.maxWidth >= 600 || Global.isCarMode.value;
+        bool isTablet = constraints.maxWidth >= 600 || Global.isCarMode.value || Global.isTvMode.value;
 
         Widget buildItem(BuildContext context, int index) {
           var record = _list[index];

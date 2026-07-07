@@ -1133,7 +1133,7 @@ class _FileListView extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        bool isTablet = constraints.maxWidth >= 600 || Global.isCarMode.value;
+        bool isTablet = constraints.maxWidth >= 600 || Global.isCarMode.value || Global.isTvMode.value;
 
         Widget buildItem(BuildContext context, int index) {
           if (index == files.length) {

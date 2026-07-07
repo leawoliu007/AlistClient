@@ -37,7 +37,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    bool isCarOrUltraWide = MediaQuery.of(context).size.width >= 900 || Global.isCarMode.value;
+    bool isCarOrUltraWide = MediaQuery.of(context).size.width >= 900 || Global.isCarMode.value || Global.isTvMode.value;
 
     return AlistScaffold(
       appbarTitle: const SizedBox(),

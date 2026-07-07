@@ -27,6 +27,7 @@ Future<void> main() async {
   // sp初始化
   await SpUtil.getInstance();
   Global.isCarMode.value = SpUtil.getBool(AlistConstant.isCarMode, defValue: false) ?? false;
+  Global.isTvMode.value = SpUtil.getBool(AlistConstant.isTvMode, defValue: false) ?? false;
   Log.init();
   await DioUtils.initCronet();
   runApp(const MyApp());
@@ -80,6 +81,7 @@ class MyApp extends StatelessWidget {
     return ThemeData(
         useMaterial3: true,
         colorScheme: darkColorScheme,
+        focusColor: Colors.white.withOpacity(0.15),
         dividerTheme: DividerTheme.of(context).copyWith(
           thickness: 0,
           space: 0,
@@ -104,6 +106,7 @@ class MyApp extends StatelessWidget {
       useMaterial3: true,
       hintColor: const Color(0xFFBBBBBB),
       colorScheme: lightColorScheme,
+      focusColor: Colors.black.withOpacity(0.12),
       dividerTheme: DividerTheme.of(context).copyWith(
         thickness: 0,
         space: 0,

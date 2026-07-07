@@ -92,6 +92,19 @@ class _SettingsContainerState extends State<_SettingsContainer>
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           ));
     }
+    if (settingsMenu.menuId == MenuId.tvMode) {
+      return Obx(() => SwitchListTile(
+            title: Text(settingsMenu.name),
+            secondary: Image.asset(settingsMenu.icon),
+            value: Global.isTvMode.value,
+            onChanged: (value) {
+              Global.isTvMode.value = value;
+              SpUtil.putBool(AlistConstant.isTvMode, value);
+            },
+            tileColor: Theme.of(context).colorScheme.background.withAlpha(125),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+          ));
+    }
 
     return ListTile(
       onTap: () {
@@ -181,6 +194,11 @@ class _SettingsContainerState extends State<_SettingsContainer>
           icon: Images.settingsScreenPlayer,
       ),
       SettingsMenu(
+          menuId: MenuId.tvMode,
+          name: "电视/手柄模式 / TV & Gamepad UI",
+          icon: Images.settingsScreenPlayer,
+      ),
+      SettingsMenu(
           menuId: MenuId.privacyPolicy,
           name: Intl.settingsScreen_item_privacyPolicy.tr,
           icon: Images.settingsScreenPrivacyPolicy,
@@ -252,5 +270,6 @@ enum MenuId {
   about,
   cacheManager,
   playerSettings,
-  carMode
+  carMode,
+  tvMode
 }

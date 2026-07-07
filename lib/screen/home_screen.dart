@@ -62,8 +62,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        bool isTablet = constraints.maxWidth >= 600 || Global.isCarMode.value;
-        bool isCarOrUltraWide = constraints.maxWidth >= 900 || Global.isCarMode.value;
+        bool isTablet = constraints.maxWidth >= 600 || Global.isCarMode.value || Global.isTvMode.value;
+        bool isCarOrUltraWide = constraints.maxWidth >= 900 || Global.isCarMode.value || Global.isTvMode.value;
 
         if (isTablet) {
           return Scaffold(

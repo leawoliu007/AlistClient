@@ -5,4 +5,5 @@ class Global {
   static String demoServerBaseUrl = "https://qianyi605.eu.org/";
   static final fileNameMaxLines = 1.obs;
   static final isCarMode = false.obs;
+  static final isTvMode = false.obs;
 }

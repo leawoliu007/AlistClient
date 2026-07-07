@@ -115,7 +115,7 @@ class FileSearchScreen extends StatelessWidget {
     return Obx(() {
       return LayoutBuilder(
         builder: (context, constraints) {
-          bool isTablet = constraints.maxWidth >= 600 || Global.isCarMode.value;
+          bool isTablet = constraints.maxWidth >= 600 || Global.isCarMode.value || Global.isTvMode.value;
           
           Widget buildItem(BuildContext context, int index) {
             var item = controller.list[index];
