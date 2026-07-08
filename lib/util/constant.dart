@@ -37,4 +37,5 @@ class AlistConstant {
   static const String locale = 'locale';
   static const String isCarMode = 'isCarMode';
   static const String isTvMode = 'isTvMode';
+  static const String builtinServersAdded = 'builtinServersAdded';
 }

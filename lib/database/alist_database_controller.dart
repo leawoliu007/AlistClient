@@ -14,6 +14,9 @@ import 'package:floor/floor.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:flustars/flustars.dart';
+import 'package:alist/util/constant.dart';
+import 'package:alist/database/table/server.dart';
 
 class AlistDatabaseController extends GetxController {
   late final AlistDatabase database;
@@ -111,5 +114,49 @@ class AlistDatabaseController extends GetxController {
     favoriteDao = database.favoriteDao;
     musicLibraryDao = database.musicLibraryDao;
     musicTrackDao = database.musicTrackDao;
+
+    await _insertBuiltinServers();
+  }
+
+  Future<void> _insertBuiltinServers() async {
+    bool hasAdded = SpUtil.getBool(AlistConstant.builtinServersAdded) ?? false;
+    if (hasAdded) {
+      return;
+    }
+
+    final builtinServers = [
+      "http://swk5de.com:520/",
+      "http://62.106.70.207:5678/",
+      "http://lickyu.i234.me:5244/",
+      "http://sykang.vip:5244/",
+      "https://pan.mailberry.com.cn/",
+      "https://alist.shenzid.com/",
+      "https://taiki.me/",
+      "https://pan.mediy.cn/",
+      "https://alist.zlion.top/",
+    ];
+
+    int now = DateTime.now().millisecondsSinceEpoch;
+    for (String url in builtinServers) {
+      // Create guest user configuration
+      Server server = Server(
+        name: "guest",
+        serverUrl: url,
+        userId: "guest",
+        password: "",
+        token: "",
+        guest: true,
+        ignoreSSLError: true, // Allow SSL bypass to prevent errors
+        createTime: now,
+        updateTime: now,
+      );
+      // Ensure we don't insert duplicates if somehow already present
+      var existing = await serverDao.findServer(url, "guest");
+      if (existing == null) {
+        await serverDao.insertServer(server);
+      }
+    }
+
+    SpUtil.putBool(AlistConstant.builtinServersAdded, true);
   }
 }
