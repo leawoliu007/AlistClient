@@ -39,6 +39,10 @@ Future<void> main() async {
   runApp(const MyApp());
 }
 
+class _BackIntent extends Intent {
+  const _BackIntent();
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -59,6 +63,8 @@ class MyApp extends StatelessWidget {
     );
   }
 
+
+
   Widget _routerBuilder(BuildContext context, Widget? widget) {
     final smartDialogInit = FlutterSmartDialog.init();
     Get.put(AlistDatabaseController());
@@ -67,19 +73,38 @@ class MyApp extends StatelessWidget {
     Get.put(AudioPlayerService(), permanent: true);
     Get.put(MusicScannerService(), permanent: true);
 
-    return MediaQuery(
-      data: MediaQuery.of(context).copyWith(textScaleFactor: 1),
-      child: RefreshConfiguration(
-          headerBuilder: () {
-            return ClassicHeader(
-              idleText: Intl.pullRefresh_idleRefreshText.tr,
-              releaseText: Intl.pullRefresh_canRefreshText.tr,
-              refreshingText: Intl.pullRefresh_refreshingText.tr,
-              completeText: Intl.pullRefresh_refreshCompleteText.tr,
-              failedText: Intl.pullRefresh_refreshFailedText.tr,
-            );
-          },
-          child: smartDialogInit(context, widget)),
+    return Shortcuts(
+      shortcuts: <LogicalKeySet, Intent>{
+        LogicalKeySet(LogicalKeyboardKey.select): const ActivateIntent(),
+        LogicalKeySet(LogicalKeyboardKey.enter): const ActivateIntent(),
+        LogicalKeySet(LogicalKeyboardKey.gameButtonA): const ActivateIntent(),
+        LogicalKeySet(LogicalKeyboardKey.escape): const _BackIntent(),
+        LogicalKeySet(LogicalKeyboardKey.goBack): const _BackIntent(),
+      },
+      child: Actions(
+        actions: <Type, Action<Intent>>{
+          _BackIntent: CallbackAction<_BackIntent>(
+            onInvoke: (intent) async {
+              await WidgetsBinding.instance.handlePopRoute();
+              return null;
+            },
+          ),
+        },
+        child: MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaleFactor: 1),
+          child: RefreshConfiguration(
+              headerBuilder: () {
+                return ClassicHeader(
+                  idleText: Intl.pullRefresh_idleRefreshText.tr,
+                  releaseText: Intl.pullRefresh_canRefreshText.tr,
+                  refreshingText: Intl.pullRefresh_refreshingText.tr,
+                  completeText: Intl.pullRefresh_refreshCompleteText.tr,
+                  failedText: Intl.pullRefresh_refreshFailedText.tr,
+                );
+              },
+              child: smartDialogInit(context, widget)),
+        ),
+      ),
     );
   }
 
@@ -87,7 +112,7 @@ class MyApp extends StatelessWidget {
     return ThemeData(
         useMaterial3: true,
         colorScheme: darkColorScheme,
-        focusColor: Colors.white.withOpacity(0.15),
+        focusColor: Global.isTvMode.value ? Colors.white.withOpacity(0.35) : Colors.white.withOpacity(0.15),
         scaffoldBackgroundColor: const Color(0xFF121212),
         cardTheme: CardTheme(
           elevation: 0,
@@ -127,7 +152,7 @@ class MyApp extends StatelessWidget {
       useMaterial3: true,
       hintColor: const Color(0xFFBBBBBB),
       colorScheme: lightColorScheme,
-      focusColor: Colors.black.withOpacity(0.12),
+      focusColor: Global.isTvMode.value ? Colors.black.withOpacity(0.35) : Colors.black.withOpacity(0.12),
       scaffoldBackgroundColor: const Color(0xFFF7F7F9),
       cardTheme: CardTheme(
         elevation: 0,

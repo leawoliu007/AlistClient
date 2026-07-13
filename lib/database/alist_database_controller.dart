@@ -119,10 +119,11 @@ class AlistDatabaseController extends GetxController {
   }
 
   Future<void> _insertBuiltinServers() async {
-    bool hasAdded = SpUtil.getBool(AlistConstant.builtinServersAdded) ?? false;
-    if (hasAdded) {
-      return;
-    }
+    // Remove hasAdded check so it always checks and inserts if missing
+    // bool hasAdded = SpUtil.getBool(AlistConstant.builtinServersAdded) ?? false;
+    // if (hasAdded) {
+    //   return;
+    // }
 
     final builtinServers = [
       "http://swk5de.com:520/",
